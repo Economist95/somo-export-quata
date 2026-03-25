@@ -15,6 +15,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
+    <!-- مكتبة Flatpickr لتحسين واجهة اختيار التاريخ والوقت -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ar.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -98,22 +103,23 @@
         <!-- قسم الكميات المخططة -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-bullseye text-secondary"></i> الكميات المخططة (الهدف)
+                <i class="fa-solid fa-bullseye text-secondary"></i> الكميات المخططة (الهدف) <span class="text-sm font-normal text-gray-500 ml-2">(الإدخال بالطن/يوم)</span>
             </h2>
             
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <!-- الإجمالي -->
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <label class="block text-sm font-bold text-primary mb-2">إجمالي الكميات المخططة</label>
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 relative">
+                    <label class="block text-sm font-bold text-primary mb-2">إجمالي الكميات (طن/يوم)</label>
                     <input type="number" id="plan-total" class="input-field text-lg font-bold text-primary" oninput="calcFromTotal()" placeholder="0">
+                    <div id="plan-total-monthly" class="text-xs font-bold text-gray-600 mt-2 bg-white px-2 py-1 rounded border border-blue-100">الشهري: 0 طن/شهر</div>
                 </div>
 
                 <!-- المحور الشمالي -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">المحور الشمالي</label>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 mb-1">
                         <div class="w-2/3">
-                            <span class="text-xs text-gray-500 mb-1 block">الكمية</span>
+                            <span class="text-xs text-gray-500 mb-1 block">الكمية (طن/يوم)</span>
                             <input type="number" id="plan-n-qty" class="input-field" oninput="calcFromQty()" placeholder="0">
                         </div>
                         <div class="w-1/3">
@@ -121,14 +127,15 @@
                             <input type="number" id="plan-n-pct" class="input-field bg-gray-50" oninput="calcFromPct('n')" placeholder="0">
                         </div>
                     </div>
+                    <div id="plan-n-monthly" class="text-xs text-gray-500">الشهري: 0 طن</div>
                 </div>
 
                 <!-- محور الوسط -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">محور الوسط</label>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 mb-1">
                         <div class="w-2/3">
-                            <span class="text-xs text-gray-500 mb-1 block">الكمية</span>
+                            <span class="text-xs text-gray-500 mb-1 block">الكمية (طن/يوم)</span>
                             <input type="number" id="plan-c-qty" class="input-field" oninput="calcFromQty()" placeholder="0">
                         </div>
                         <div class="w-1/3">
@@ -136,14 +143,15 @@
                             <input type="number" id="plan-c-pct" class="input-field bg-gray-50" oninput="calcFromPct('c')" placeholder="0">
                         </div>
                     </div>
+                    <div id="plan-c-monthly" class="text-xs text-gray-500">الشهري: 0 طن</div>
                 </div>
 
                 <!-- المحور الجنوبي -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">المحور الجنوبي</label>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 mb-1">
                         <div class="w-2/3">
-                            <span class="text-xs text-gray-500 mb-1 block">الكمية</span>
+                            <span class="text-xs text-gray-500 mb-1 block">الكمية (طن/يوم)</span>
                             <input type="number" id="plan-s-qty" class="input-field" oninput="calcFromQty()" placeholder="0">
                         </div>
                         <div class="w-1/3">
@@ -151,6 +159,7 @@
                             <input type="number" id="plan-s-pct" class="input-field bg-gray-50" oninput="calcFromPct('s')" placeholder="0">
                         </div>
                     </div>
+                    <div id="plan-s-monthly" class="text-xs text-gray-500">الشهري: 0 طن</div>
                 </div>
             </div>
         </section>
@@ -175,20 +184,20 @@
                         <option value="s">الجنوبي</option>
                     </select>
                 </div>
+
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">منفذ التصدير</label>
+                    <input type="text" id="comp-port" class="input-field" placeholder="مثال: غربي-سوري">
+                </div>
                 
                 <div class="md:col-span-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">الكمية المخصصة <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">الكمية (طن/يوم) <span class="text-red-500">*</span></label>
                     <input type="number" id="comp-qty" class="input-field" placeholder="0" min="1" required>
                 </div>
                 
                 <div class="md:col-span-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">تقييم الأداء (1-10)</label>
-                    <input type="number" id="comp-perf" class="input-field" placeholder="10" min="1" max="10">
-                </div>
-                
-                <div class="md:col-span-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">تاريخ الإجابة</label>
-                    <input type="date" id="comp-resp" class="input-field">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">وقت وتاريخ الإجابة <span class="text-red-500">*</span></label>
+                    <input type="text" id="comp-resp" class="input-field bg-white cursor-pointer" placeholder="اختر التاريخ والوقت" required>
                 </div>
                 
                 <div class="md:col-span-1">
@@ -206,7 +215,7 @@
                     <i class="fa-solid fa-table-list text-secondary"></i> جدول التخصيص الفعلي والتحليل
                 </h2>
                 <button onclick="applyPriority()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm shadow-sm">
-                    <i class="fa-solid fa-sort-amount-down"></i> تطبيق الأولوية الذكية
+                    <i class="fa-solid fa-sort-amount-down"></i> تطبيق الأولوية (حسب أسبقية الإجابة)
                 </button>
             </div>
             
@@ -216,9 +225,10 @@
                         <tr>
                             <th>المحور</th>
                             <th>الشركة</th>
-                            <th>الكمية المخصصة</th>
-                            <th>تقييم الأداء</th>
-                            <th>تاريخ الإجابة</th>
+                            <th>منفذ التصدير</th>
+                            <th>الكمية (يومي)</th>
+                            <th>الكمية (شهري)</th>
+                            <th>وقت وتاريخ الإجابة</th>
                             <th title="نسبة الشركة من إجمالي ما تم توزيعه فعلياً في نفس محورها">% من الإجمالي الفعلي للمحور</th>
                             <th title="نسبة الشركة من الهدف المخطط لمحورها">% من المخطط للمحور</th>
                             <th title="نسبة الشركة من الإجمالي العام لكل المحاور">% من التخصيص الكلي</th>
@@ -227,13 +237,34 @@
                     </thead>
                     <tbody id="table-body">
                         <tr>
-                            <td colspan="9" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً. قم بإضافة شركات في النموذج أعلاه.</td>
+                            <td colspan="10" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً. قم بإضافة شركات في النموذج أعلاه.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- ملخص الإحصائيات -->
+            <!-- جدول ملخص إجماليات الشركات -->
+            <div class="mt-8 border-t pt-6 hidden" id="company-summary-section">
+                <h3 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-bar text-secondary"></i> ملخص إجمالي كميات الشركات (مجمعة من كافة المحاور)
+                </h3>
+                <div class="table-container rounded-lg border border-gray-200">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-100 text-gray-700">
+                            <tr>
+                                <th class="py-2 px-4 text-right border-b">اسم الشركة</th>
+                                <th class="py-2 px-4 text-right border-b">المحاور النشطة</th>
+                                <th class="py-2 px-4 text-center border-b">إجمالي الكمية (طن/يوم)</th>
+                                <th class="py-2 px-4 text-center border-b">إجمالي الكمية (طن/شهر)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="company-summary-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ملخص الإحصائيات (المحاور) -->
             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" id="stats-panel">
                 <!-- سيتم ملؤه برمجياً -->
             </div>
@@ -321,6 +352,7 @@
                 document.getElementById('plan-c-pct').value = '';
                 document.getElementById('plan-s-qty').value = '';
                 document.getElementById('plan-s-pct').value = '';
+                calcFromQty(); // تصفير العرض الشهري
                 renderTable();
                 showToast('تم مسح البيانات بنجاح', 'success');
             }
@@ -344,7 +376,6 @@
         }
 
         // --- حسابات الكميات المخططة ---
-        // الحصول على القيم الحالية للكميات المخططة
         function getPlannedVals() {
             return {
                 total: parseFloat(document.getElementById('plan-total').value) || 0,
@@ -354,7 +385,14 @@
             };
         }
 
-        // عند تغيير أي كمية (تحديث الإجمالي والنسب)
+        function updateMonthlyDisplays() {
+            let v = getPlannedVals();
+            document.getElementById('plan-total-monthly').innerText = `الشهري: ${(v.total * 30).toLocaleString()} طن/شهر`;
+            document.getElementById('plan-n-monthly').innerText = `الشهري: ${(v.nQ * 30).toLocaleString()} طن`;
+            document.getElementById('plan-c-monthly').innerText = `الشهري: ${(v.cQ * 30).toLocaleString()} طن`;
+            document.getElementById('plan-s-monthly').innerText = `الشهري: ${(v.sQ * 30).toLocaleString()} طن`;
+        }
+
         function calcFromQty() {
             let v = getPlannedVals();
             let total = v.nQ + v.cQ + v.sQ;
@@ -367,10 +405,10 @@
             } else {
                 ['n', 'c', 's'].forEach(ax => document.getElementById(`plan-${ax}-pct`).value = '');
             }
+            updateMonthlyDisplays();
             renderTable();
         }
 
-        // عند تغيير الإجمالي الكلي (تحديث الكميات بناءً على النسب)
         function calcFromTotal() {
             let total = parseFloat(document.getElementById('plan-total').value) || 0;
             let nP = parseFloat(document.getElementById('plan-n-pct').value) || 0;
@@ -378,7 +416,6 @@
             let sP = parseFloat(document.getElementById('plan-s-pct').value) || 0;
 
             if(nP === 0 && cP === 0 && sP === 0 && total > 0){
-                 // حالة أولية: توزيع بالتساوي إذا لم تكن هناك نسب
                  document.getElementById('plan-n-pct').value = 33.3;
                  document.getElementById('plan-c-pct').value = 33.3;
                  document.getElementById('plan-s-pct').value = 33.4;
@@ -388,46 +425,44 @@
             document.getElementById('plan-n-qty').value = ((nP / 100) * total).toFixed(0);
             document.getElementById('plan-c-qty').value = ((cP / 100) * total).toFixed(0);
             document.getElementById('plan-s-qty').value = ((sP / 100) * total).toFixed(0);
+            
+            updateMonthlyDisplays();
             renderTable();
         }
 
-        // عند تغيير نسبة معينة
         function calcFromPct(axis) {
             let total = parseFloat(document.getElementById('plan-total').value) || 0;
             let pct = parseFloat(document.getElementById(`plan-${axis}-pct`).value) || 0;
             
-            // تحديث الكمية للمحور الذي تغيرت نسبته
             document.getElementById(`plan-${axis}-qty`).value = ((pct / 100) * total).toFixed(0);
-            
-            // إعادة حساب الإجمالي والنسب الأخرى لضمان التناسق الرياضي
             calcFromQty(); 
         }
 
         // --- إدارة الشركات ---
         function addCompany(e) {
-            e.preventDefault(); // منع تحديث الصفحة
+            e.preventDefault();
             
             const name = document.getElementById('comp-name').value.trim();
             const axis = document.getElementById('comp-axis').value;
+            const port = document.getElementById('comp-port').value.trim() || 'غير محدد';
             const qty = parseFloat(document.getElementById('comp-qty').value);
-            const perfInput = document.getElementById('comp-perf').value;
-            const respInput = document.getElementById('comp-resp').value;
+            const resp = document.getElementById('comp-resp').value;
             
-            const perf = perfInput ? parseFloat(perfInput) : 5; // افتراضي 5
-            const resp = respInput || ''; // تخزين التاريخ كنص
-
             if (qty <= 0) {
                 showToast('يجب أن تكون الكمية المخصصة أكبر من صفر', 'error');
                 return;
             }
 
             companies.push({
-                id: Date.now(), // معرف فريد
-                name, axis, qty, perf, resp
+                id: Date.now(), 
+                name, axis, port, qty, resp
             });
 
             document.getElementById('company-form').reset();
-            // إعادة المحور للقيمة الافتراضية الأولى
+            // مسح حقل التاريخ في الأداة الجديدة
+            if (document.querySelector("#comp-resp")._flatpickr) {
+                document.querySelector("#comp-resp")._flatpickr.clear();
+            }
             document.getElementById('comp-axis').value = 'n'; 
             
             showToast('تمت إضافة الشركة بنجاح', 'success');
@@ -447,17 +482,13 @@
             }
             
             companies.sort((a, b) => {
-                if (b.perf !== a.perf) {
-                    return b.perf - a.perf; // التقييم الأعلى أولاً
-                }
-                
-                // الأولوية لتاريخ الإجابة الأقدم
+                // الأولوية للوقت والتاريخ الأقدم
                 let dateA = a.resp ? new Date(a.resp).getTime() : Infinity;
                 let dateB = b.resp ? new Date(b.resp).getTime() : Infinity;
                 return dateA - dateB;
             });
             
-            showToast('تم تطبيق معايير الأولوية وإعادة ترتيب الجدول', 'success');
+            showToast('تم ترتيب الجدول حسب أسبقية الوقت والتاريخ', 'success');
             renderTable();
         }
 
@@ -465,41 +496,52 @@
         function renderTable() {
             const tbody = document.getElementById('table-body');
             const statsPanel = document.getElementById('stats-panel');
+            const compSummarySection = document.getElementById('company-summary-section');
+            const compSummaryBody = document.getElementById('company-summary-body');
             
+            updateMonthlyDisplays(); // تحديث أرقام المخطط في حال تم استدعاء الداله مباشرة
+
             if (companies.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً.</td></tr>';
                 statsPanel.innerHTML = '';
+                compSummarySection.classList.add('hidden');
                 return;
             }
 
             tbody.innerHTML = '';
+            compSummarySection.classList.remove('hidden');
             let planned = getPlannedVals();
             let axisPlanned = { 'n': planned.nQ, 'c': planned.cQ, 's': planned.sQ };
             
-            // حساب إجماليات التخصيص الفعلي الحالي
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
+            let companyTotals = {}; // تجميع حسب اسم الشركة
+
             companies.forEach(c => {
                 actualTotals[c.axis] += c.qty;
                 actualTotals.all += c.qty;
+
+                // تجميع بيانات الشركة
+                let compKey = c.name.trim();
+                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
+                companyTotals[compKey].daily += c.qty;
+                companyTotals[compKey].axes.add(axisNames[c.axis]);
             });
 
             companies.forEach(c => {
                 let row = document.createElement('tr');
                 
-                // تمييز بصري للشركات ذات الأولوية العالية (تقييم >= 8، ولديها تاريخ إجابة)
-                const isHighPriority = c.perf >= 8 && c.resp;
-                if(isHighPriority) row.className = 'priority-row';
-
-                // تنسيق تاريخ الإجابة
+                // تنسيق تاريخ ووقت الإجابة
                 let respDisplay = 'غير محدد';
                 if(c.resp) {
-                    // التوافق مع الإصدارات السابقة إذا كانت القيمة رقماً، أو عرض التاريخ
-                    if(typeof c.resp === 'string' && c.resp.includes('-')) {
-                        respDisplay = new Date(c.resp).toLocaleDateString('ar-EG');
+                    let d = new Date(c.resp);
+                    if(!isNaN(d)) {
+                        respDisplay = d.toLocaleString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                     } else {
                         respDisplay = c.resp; 
                     }
                 }
+
+                let qtyMonthly = c.qty * 30;
 
                 // الحسابات التحليلية
                 let pctAxisActual = actualTotals[c.axis] > 0 ? ((c.qty / actualTotals[c.axis]) * 100).toFixed(1) : '0.0';
@@ -508,10 +550,11 @@
 
                 row.innerHTML = `
                     <td class="font-semibold text-primary">${axisNames[c.axis]}</td>
-                    <td class="font-bold">${c.name} ${isHighPriority ? '<i class="fa-solid fa-star text-yellow-400 ml-1 text-xs" title="شركة مميزة"></i>' : ''}</td>
+                    <td class="font-bold">${c.name}</td>
+                    <td>${c.port || '-'}</td>
                     <td class="text-center font-bold text-gray-800">${c.qty.toLocaleString()}</td>
-                    <td class="text-center"><span class="bg-gray-100 px-2 py-1 rounded text-sm">${c.perf} / 10</span></td>
-                    <td class="text-center"><span class="bg-gray-100 px-2 py-1 rounded text-sm">${respDisplay}</span></td>
+                    <td class="text-center font-bold text-indigo-600">${qtyMonthly.toLocaleString()}</td>
+                    <td class="text-center" dir="ltr"><span class="bg-gray-100 px-2 py-1 rounded text-sm whitespace-nowrap">${respDisplay}</span></td>
                     <td class="text-center text-blue-600 font-bold">% ${pctAxisActual}</td>
                     <td class="text-center text-green-600 font-bold">% ${pctAxisPlanned}</td>
                     <td class="text-center text-purple-600 font-bold">% ${pctGlobalActual}</td>
@@ -524,11 +567,26 @@
                 tbody.appendChild(row);
             });
 
-            // تحديث لوحة الإحصائيات السفلية
+            // تحديث جدول ملخص الشركات
+            compSummaryBody.innerHTML = '';
+            Object.keys(companyTotals).forEach(compName => {
+                let data = companyTotals[compName];
+                let row = document.createElement('tr');
+                row.className = "bg-white hover:bg-gray-50";
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b font-bold">${compName}</td>
+                    <td class="py-2 px-4 border-b text-gray-600">${Array.from(data.axes).join(' ، ')}</td>
+                    <td class="py-2 px-4 border-b text-center font-bold text-gray-800">${data.daily.toLocaleString()}</td>
+                    <td class="py-2 px-4 border-b text-center font-bold text-indigo-600">${(data.daily * 30).toLocaleString()}</td>
+                `;
+                compSummaryBody.appendChild(row);
+            });
+
+            // تحديث لوحة الإحصائيات السفلية للمحاور
             let statsHtml = '';
             ['n', 'c', 's'].forEach(ax => {
-                let remain = axisPlanned[ax] - actualTotals[ax];
-                let isDeficit = remain < 0; // تم التخصيص أكثر من المخطط
+                let remainDaily = axisPlanned[ax] - actualTotals[ax];
+                let isDeficit = remainDaily < 0; 
                 let colorClass = isDeficit ? 'text-red-500' : 'text-green-500';
                 let statusText = isDeficit ? 'عجز (تجاوز المخطط)' : 'متبقي متاح';
                 
@@ -536,16 +594,16 @@
                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">إحصائيات المحور ${axisNames[ax]}</h3>
                     <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-500">الكمية المخططة:</span>
-                        <span class="font-bold">${axisPlanned[ax].toLocaleString()}</span>
+                        <span class="text-gray-500">المخطط (يومي / شهري):</span>
+                        <span class="font-bold">${axisPlanned[ax].toLocaleString()} / ${(axisPlanned[ax]*30).toLocaleString()}</span>
                     </div>
                     <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-500">التخصيص الفعلي:</span>
-                        <span class="font-bold text-blue-600">${actualTotals[ax].toLocaleString()}</span>
+                        <span class="text-gray-500">التخصيص الفعلي (يومي / شهري):</span>
+                        <span class="font-bold text-blue-600">${actualTotals[ax].toLocaleString()} / ${(actualTotals[ax]*30).toLocaleString()}</span>
                     </div>
                     <div class="flex justify-between text-sm mt-2 pt-2 border-t">
-                        <span class="text-gray-500">${statusText}:</span>
-                        <span class="font-bold ${colorClass}">${Math.abs(remain).toLocaleString()} ${isDeficit ? '-' : ''}</span>
+                        <span class="text-gray-500">${statusText} (يومي):</span>
+                        <span class="font-bold ${colorClass}">${Math.abs(remainDaily).toLocaleString()} ${isDeficit ? '-' : ''}</span>
                     </div>
                 </div>`;
             });
@@ -566,11 +624,9 @@
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
             companies.forEach(c => { actualTotals[c.axis] += c.qty; actualTotals.all += c.qty; });
 
-            // إضافة BOM لدعم اللغة العربية في Excel
             let csvContent = '\uFEFF'; 
             
-            // ترويسة الجدول
-            csvContent += "المحور,الشركة,الكمية المخصصة,تقييم الأداء (10),تاريخ الإجابة,% من الإجمالي الفعلي للمحور,% من المخطط للمحور,% من التخصيص الكلي\n";
+            csvContent += "المحور,الشركة,منفذ التصدير,الكمية المخصصة (طن/يوم),الكمية المخصصة (طن/شهر),وقت وتاريخ الإجابة,% من الإجمالي الفعلي للمحور,% من المخطط للمحور,% من التخصيص الكلي\n";
 
             companies.forEach(c => {
                 let pctAxisActual = actualTotals[c.axis] > 0 ? ((c.qty / actualTotals[c.axis]) * 100).toFixed(1) : 0;
@@ -578,20 +634,24 @@
                 let pctAxisPlanned = plannedForAxis > 0 ? ((c.qty / plannedForAxis) * 100).toFixed(1) : 0;
                 let pctGlobalActual = actualTotals.all > 0 ? ((c.qty / actualTotals.all) * 100).toFixed(1) : 0;
 
-                let respDisplay = (c.resp && typeof c.resp === 'string' && c.resp.includes('-')) ? c.resp : (c.resp || 'غير محدد');
-
-                // تنظيف الأسماء من الفواصل لتجنب كسر ملف CSV
-                let safeName = c.name.replace(/,/g, ' '); 
+                let respDisplay = 'غير محدد';
+                if(c.resp) {
+                    let d = new Date(c.resp);
+                    respDisplay = !isNaN(d) ? d.toLocaleString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : c.resp;
+                }
                 
-                csvContent += `${axisNames[c.axis]},${safeName},${c.qty},${c.perf},${respDisplay},${pctAxisActual}%,${pctAxisPlanned}%,${pctGlobalActual}%\n`;
+                let qtyMonthly = c.qty * 30;
+                let safeName = c.name.replace(/,/g, ' '); 
+                let safePort = (c.port || '').replace(/,/g, ' '); 
+                
+                csvContent += `${axisNames[c.axis]},${safeName},${safePort},${c.qty},${qtyMonthly},${respDisplay},${pctAxisActual}%,${pctAxisPlanned}%,${pctGlobalActual}%\n`;
             });
 
-            // إنشاء رابط التحميل الوهمي وتفعيله
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", "تقرير_تخصيص_الصادرات.csv");
+            link.setAttribute("download", "تقرير_تخصيص_الصادرات_مبسط.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -616,14 +676,19 @@
             
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
             let companiesByAxis = { 'n': [], 'c': [], 's': [] };
-            
+            let companyTotals = {}; // لحساب إجماليات الشركات
+
             companies.forEach(c => {
                 actualTotals[c.axis] += c.qty;
                 actualTotals.all += c.qty;
                 companiesByAxis[c.axis].push(c);
+
+                let compKey = c.name.trim();
+                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
+                companyTotals[compKey].daily += c.qty;
+                companyTotals[compKey].axes.add(axisNames[c.axis]);
             });
 
-            // تنسيق داخلي للتقرير يضمن شكله الجميل عند التصدير لـ PDF أو Word
             const reportStyle = `
                 <style>
                     .report-body { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; color: #1f2937; line-height: 1.6; }
@@ -656,19 +721,19 @@
                 <div class="r-section">
                     <div class="r-sec-title">
                         <span>أولاً: الإجمالي المخطط</span>
-                        <span class="r-total-badge">${planned.total.toLocaleString()}</span>
+                        <span class="r-total-badge" style="font-size:14px;">يومي: ${planned.total.toLocaleString()} | شهري: ${(planned.total*30).toLocaleString()}</span>
                     </div>
                     
                     <div class="r-grid">
             `;
             
-            // تفرع المخطط
             ['n', 'c', 's'].forEach(ax => {
                 let pct = planned.total > 0 ? ((axisPlanned[ax]/planned.total)*100).toFixed(1) : 0;
                 html += `
                     <div class="r-axis-card">
                         <div class="r-axis-title">المحور ${axisNames[ax]}</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #1e3a8a;">${axisPlanned[ax].toLocaleString()}</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #1e3a8a;">يومي: ${axisPlanned[ax].toLocaleString()} طن</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #4338ca; margin-top: 4px;">شهري: ${(axisPlanned[ax]*30).toLocaleString()} طن</div>
                         <div style="color: #64748b; font-size: 13px; margin-top: 5px;">النسبة من الكلي: %${pct}</div>
                     </div>
                 `;
@@ -681,20 +746,19 @@
                 <div class="r-section" style="border-color: #bbf7d0; background-color: #f0fdf4;">
                     <div class="r-sec-title" style="color: #166534; border-color: #bbf7d0;">
                         <span>ثانياً: الإجمالي المخصص (الفعلي)</span>
-                        <span class="r-total-badge" style="background-color: #166534;">${actualTotals.all.toLocaleString()}</span>
+                        <span class="r-total-badge" style="background-color: #166534; font-size:14px;">يومي: ${actualTotals.all.toLocaleString()} | شهري: ${(actualTotals.all*30).toLocaleString()}</span>
                     </div>
             `;
 
-            // تفرع المخصص (محاور ثم شركات)
             ['n', 'c', 's'].forEach(ax => {
                 let diff = axisPlanned[ax] - actualTotals[ax];
-                let diffText = diff >= 0 ? `<span style="color:#16a34a">(متبقي: ${diff.toLocaleString()})</span>` : `<span style="color:#dc2626">(تجاوز: ${Math.abs(diff).toLocaleString()})</span>`;
+                let diffText = diff >= 0 ? `<span style="color:#16a34a">(متبقي يومي: ${diff.toLocaleString()})</span>` : `<span style="color:#dc2626">(تجاوز يومي: ${Math.abs(diff).toLocaleString()})</span>`;
                 
                 html += `
                     <div style="margin-bottom: 25px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px;">
-                        <h4 style="font-size: 18px; font-weight: bold; color: #15803d; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                        <h4 style="font-size: 16px; font-weight: bold; color: #15803d; margin-bottom: 15px; display: flex; justify-content: space-between;">
                             <span>تفرع المحور ${axisNames[ax]}</span>
-                            <span>إجمالي التخصيص: ${actualTotals[ax].toLocaleString()} ${diffText}</span>
+                            <span>إجمالي التخصيص للمحور: ${actualTotals[ax].toLocaleString()} طن/يوم ${diffText}</span>
                         </h4>
                 `;
                 
@@ -704,23 +768,24 @@
                             <thead>
                                 <tr>
                                     <th>اسم الشركة</th>
-                                    <th>الكمية المخصصة</th>
+                                    <th>منفذ التصدير</th>
+                                    <th>الكمية (طن/يوم)</th>
+                                    <th>الكمية (طن/شهر)</th>
                                     <th>% من المحور</th>
-                                    <th>تقييم الأداء</th>
                                 </tr>
                             </thead>
                             <tbody>
                     `;
-                    // ترتيب الشركات تنازلياً حسب الكمية
                     let sortedComps = [...companiesByAxis[ax]].sort((a,b) => b.qty - a.qty);
                     sortedComps.forEach(c => {
                         let pct = actualTotals[ax] > 0 ? ((c.qty/actualTotals[ax])*100).toFixed(1) : 0;
                         html += `
                             <tr>
                                 <td style="text-align: right; font-weight: bold;">${c.name}</td>
+                                <td>${c.port || '-'}</td>
                                 <td style="color: #0369a1; font-weight: bold;">${c.qty.toLocaleString()}</td>
+                                <td style="color: #4338ca; font-weight: bold;">${(c.qty*30).toLocaleString()}</td>
                                 <td>%${pct}</td>
-                                <td>${c.perf} / 10</td>
                             </tr>
                         `;
                     });
@@ -731,8 +796,47 @@
                 html += `</div>`;
             });
 
-            html += `</div></div>`; // نهاية المخصص والتقرير
+            html += `</div>`; // نهاية المخصص
+
+            // المستوى الثالث: إجمالي الشركات
+            html += `
+                <div class="r-section" style="border-color: #c7d2fe; background-color: #eef2ff;">
+                    <div class="r-sec-title" style="color: #4338ca; border-color: #c7d2fe;">
+                        <span>ثالثاً: ملخص إجمالي الشركات (من كافة المحاور)</span>
+                    </div>
+            `;
             
+            if(Object.keys(companyTotals).length > 0) {
+                html += `
+                    <table class="r-table">
+                        <thead>
+                            <tr>
+                                <th>اسم الشركة</th>
+                                <th>المحاور النشطة بها</th>
+                                <th>إجمالي الكمية (طن/يوم)</th>
+                                <th>إجمالي الكمية (طن/شهر)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                // ترتيب حسب الكمية الإجمالية
+                let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
+                sortedTotals.forEach(([compName, data]) => {
+                    html += `
+                        <tr>
+                            <td style="text-align: right; font-weight: bold;">${compName}</td>
+                            <td>${Array.from(data.axes).join(' ، ')}</td>
+                            <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
+                            <td style="color: #4338ca; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody></table></div>`;
+            } else {
+                html += `<div class="r-empty">لا توجد بيانات للشركات لعرضها.</div></div>`;
+            }
+
+            html += `</div>`; // نهاية التقرير
             container.innerHTML = reportStyle + html;
         }
 
@@ -769,13 +873,23 @@
         }
 
         function exportToAdvancedExcel() {
-            // إنشاء مصنف جديد باستخدام مكتبة SheetJS
             const wb = XLSX.utils.book_new();
             
             let planned = getPlannedVals();
             let axisPlanned = { 'n': planned.nQ, 'c': planned.cQ, 's': planned.sQ };
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
-            companies.forEach(c => { actualTotals[c.axis] += c.qty; actualTotals.all += c.qty; });
+            
+            let companyTotals = {};
+
+            companies.forEach(c => { 
+                actualTotals[c.axis] += c.qty; 
+                actualTotals.all += c.qty; 
+                
+                let compKey = c.name.trim();
+                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
+                companyTotals[compKey].daily += c.qty;
+                companyTotals[compKey].axes.add(axisNames[c.axis]);
+            });
             
             // --- الشيت 1: الملخص الإداري ---
             const summaryData = [
@@ -783,23 +897,23 @@
                 ["تاريخ الإصدار:", new Date().toLocaleDateString('ar-EG')],
                 [],
                 ["البيان", "المحور الشمالي", "محور الوسط", "المحور الجنوبي", "الإجمالي الكلي"],
-                ["الكميات المخططة (الهدف)", axisPlanned.n, axisPlanned.c, axisPlanned.s, planned.total],
-                ["الكميات المخصصة (الفعلي)", actualTotals.n, actualTotals.c, actualTotals.s, actualTotals.all],
-                ["الفرق (المتبقي من الهدف)", axisPlanned.n - actualTotals.n, axisPlanned.c - actualTotals.c, axisPlanned.s - actualTotals.s, planned.total - actualTotals.all]
+                ["الكميات المخططة (الهدف) - طن/يوم", axisPlanned.n, axisPlanned.c, axisPlanned.s, planned.total],
+                ["الكميات المخططة (الهدف) - طن/شهر", axisPlanned.n*30, axisPlanned.c*30, axisPlanned.s*30, planned.total*30],
+                ["الكميات المخصصة (الفعلي) - طن/يوم", actualTotals.n, actualTotals.c, actualTotals.s, actualTotals.all],
+                ["الكميات المخصصة (الفعلي) - طن/شهر", actualTotals.n*30, actualTotals.c*30, actualTotals.s*30, actualTotals.all*30],
+                ["الفرق في التخصيص - طن/يوم", axisPlanned.n - actualTotals.n, axisPlanned.c - actualTotals.c, axisPlanned.s - actualTotals.s, planned.total - actualTotals.all]
             ];
             const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-            // تحديد اتجاه الورقة وتوسيع الأعمدة
             if(!wsSummary['!views']) wsSummary['!views'] = [];
             wsSummary['!views'].push({rightToLeft: true});
-            wsSummary['!cols'] = [{wch: 25}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
+            wsSummary['!cols'] = [{wch: 35}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
             XLSX.utils.book_append_sheet(wb, wsSummary, "الملخص الإداري");
 
             // --- الشيت 2: تفاصيل التخصيص ---
             const detailsData = [
-                ["المحور", "اسم الشركة", "الكمية المخصصة", "% من المحور", "% من المخطط", "تقييم الأداء", "تاريخ الإجابة"]
+                ["المحور", "اسم الشركة", "منفذ التصدير", "الكمية (طن/يوم)", "الكمية (طن/شهر)", "% من المحور", "% من المخطط", "وقت وتاريخ الإجابة"]
             ];
             
-            // ترتيب الشركات حسب المحور ثم حسب الكمية الأكبر
             const sortedCompanies = [...companies].sort((a,b) => {
                 if (a.axis !== b.axis) return a.axis.localeCompare(b.axis);
                 return b.qty - a.qty; 
@@ -808,16 +922,37 @@
             sortedCompanies.forEach(c => {
                 let pctAxisActual = actualTotals[c.axis] > 0 ? ((c.qty / actualTotals[c.axis]) * 100).toFixed(1) + '%' : '0%';
                 let pctAxisPlanned = axisPlanned[c.axis] > 0 ? ((c.qty / axisPlanned[c.axis]) * 100).toFixed(1) + '%' : '0%';
-                let respDisplay = (c.resp && typeof c.resp === 'string' && c.resp.includes('-')) ? c.resp : (c.resp || 'غير محدد');
+                
+                let respDisplay = 'غير محدد';
+                if(c.resp) {
+                    let d = new Date(c.resp);
+                    respDisplay = !isNaN(d) ? d.toLocaleString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : c.resp;
+                }
 
-                detailsData.push([axisNames[c.axis], c.name, c.qty, pctAxisActual, pctAxisPlanned, c.perf, respDisplay]);
+                detailsData.push([axisNames[c.axis], c.name, c.port || '', c.qty, c.qty*30, pctAxisActual, pctAxisPlanned, respDisplay]);
             });
             
             const wsDetails = XLSX.utils.aoa_to_sheet(detailsData);
             if(!wsDetails['!views']) wsDetails['!views'] = [];
             wsDetails['!views'].push({rightToLeft: true});
-            wsDetails['!cols'] = [{wch: 15}, {wch: 30}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}, {wch: 20}];
+            wsDetails['!cols'] = [{wch: 15}, {wch: 30}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 25}];
             XLSX.utils.book_append_sheet(wb, wsDetails, "تفاصيل التخصيص");
+
+            // --- الشيت 3: إجمالي الشركات ---
+            const compTotalsData = [
+                ["اسم الشركة", "المحاور النشطة بها", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)"]
+            ];
+            
+            let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
+            sortedTotals.forEach(([compName, data]) => {
+                compTotalsData.push([compName, Array.from(data.axes).join(' ، '), data.daily, data.daily * 30]);
+            });
+
+            const wsCompTotals = XLSX.utils.aoa_to_sheet(compTotalsData);
+            if(!wsCompTotals['!views']) wsCompTotals['!views'] = [];
+            wsCompTotals['!views'].push({rightToLeft: true});
+            wsCompTotals['!cols'] = [{wch: 30}, {wch: 30}, {wch: 25}, {wch: 25}];
+            XLSX.utils.book_append_sheet(wb, wsCompTotals, "إجماليات الشركات");
 
             XLSX.writeFile(wb, "تقرير_احترافي_للتصدير.xlsx");
             showToast('تم تحميل ملف Excel الاحترافي بنجاح', 'success');
@@ -825,11 +960,21 @@
 
         // تهيئة مبدئية
         window.onload = () => {
+            // تهيئة أداة التاريخ والوقت الاحترافية
+            flatpickr("#comp-resp", {
+                enableTime: true,
+                dateFormat: "Y-m-dTH:i",
+                altInput: true,
+                altFormat: "Y/m/d h:i K", // صيغة 12 ساعة مع ص/م
+                locale: "ar", // اللغة العربية
+                disableMobile: "true" // يمنع ظهور الواجهة الافتراضية المزعجة في الهاتف
+            });
+
             if (loadData()) {
+                calcFromQty(); // لضمان تحديث عرض الشهري
                 renderTable();
                 showToast('تم استعادة بياناتك المحفوظة تلقائياً', 'success');
             } else {
-                // وضع قيم افتراضية للتجربة في المرة الأولى
                 document.getElementById('plan-total').value = 10000;
                 calcFromTotal();
             }
