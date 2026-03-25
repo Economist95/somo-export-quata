@@ -215,7 +215,7 @@
                 </div>
 
                 <div class="md:col-span-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">العلاوة السعرية</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">الحسم السعري</label>
                     <input type="number" id="comp-premium" step="any" class="input-field" placeholder="مثال: 1.5 أو -0.5">
                 </div>
                 
@@ -262,7 +262,7 @@
                             <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('port')">منفذ التصدير <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
                             <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('qty')">الكمية (يومي) <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
                             <th>الكمية (شهري)</th>
-                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('premium')">العلاوة السعرية <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('premium')">الحسم السعري <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
                             <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('resp')">وقت وتاريخ الإجابة <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
                             <th title="نسبة الشركة من إجمالي ما تم توزيعه فعلياً في نفس محورها">% من الإجمالي الفعلي للمحور</th>
                             <th title="نسبة الشركة من الهدف المخطط لمحورها">% من المخطط للمحور</th>
@@ -815,7 +815,7 @@
 
             let csvContent = '\uFEFF'; 
             
-            csvContent += "ت,اسم الشركة,المحور,منفذ التصدير,الكمية المخصصة (طن/يوم),الكمية المخصصة (طن/شهر),العلاوة السعرية,وقت وتاريخ الإجابة,% من الإجمالي الفعلي للمحور,% من المخطط للمحور,% من التخصيص الكلي,ملاحظات\n";
+            csvContent += "ت,اسم الشركة,المحور,منفذ التصدير,الكمية المخصصة (طن/يوم),الكمية المخصصة (طن/شهر),الحسم السعري,وقت وتاريخ الإجابة,% من الإجمالي الفعلي للمحور,% من المخطط للمحور,% من التخصيص الكلي,ملاحظات\n";
 
             companies.forEach((c, index) => {
                 let pctAxisActual = actualTotals[c.axis] > 0 ? ((c.qty / actualTotals[c.axis]) * 100).toFixed(1) : 0;
@@ -979,7 +979,7 @@
                                     <th>منفذ التصدير</th>
                                     <th>الكمية (يومي)</th>
                                     <th>الكمية (شهري)</th>
-                                    <th>العلاوة</th>
+                                    <th>الحسم</th>
                                     <th>وقت وتاريخ الإجابة</th>
                                     <th title="% من الإجمالي الفعلي للمحور">% (فعلي)</th>
                                     <th title="% من المخطط للمحور">% (مخطط)</th>
@@ -1186,7 +1186,7 @@
 
             // --- الشيت 2: تفاصيل التخصيص ---
             const detailsData = [
-                ["ت", "اسم الشركة", "المحور", "منفذ التصدير", "الكمية (طن/يوم)", "الكمية (طن/شهر)", "العلاوة السعرية", "% من المحور", "% من المخطط", "وقت وتاريخ الإجابة", "ملاحظات"]
+                ["ت", "اسم الشركة", "المحور", "منفذ التصدير", "الكمية (طن/يوم)", "الكمية (طن/شهر)", "الحسم السعري", "% من المحور", "% من المخطط", "وقت وتاريخ الإجابة", "ملاحظات"]
             ];
             
             companies.forEach((c, index) => {
