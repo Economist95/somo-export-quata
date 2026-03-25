@@ -164,7 +164,7 @@
             </div>
         </section>
 
-        <!-- قسم إضافة الشركات المخصصة -->
+        <!-- قسم إضافة/تعديل الشركات المخصصة -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fa-solid fa-building-user text-secondary"></i> تخصيص الكميات للشركات
@@ -200,9 +200,12 @@
                     <input type="text" id="comp-resp" class="input-field bg-white cursor-pointer" placeholder="اختر التاريخ والوقت" required>
                 </div>
                 
-                <div class="md:col-span-1">
-                    <button type="submit" class="w-full bg-accent hover:bg-green-600 text-white py-2 px-4 rounded-lg font-bold transition-colors flex justify-center items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> إضافة
+                <div class="md:col-span-1 flex gap-2">
+                    <button type="submit" id="form-submit-btn" class="flex-1 bg-accent hover:bg-green-600 text-white py-2 px-4 rounded-lg font-bold transition-colors flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-plus" id="form-submit-icon"></i> <span id="form-submit-text">إضافة</span>
+                    </button>
+                    <button type="button" id="form-cancel-btn" onclick="cancelEdit()" class="hidden bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-bold transition-colors flex justify-center items-center" title="إلغاء التعديل">
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             </form>
@@ -295,6 +298,7 @@
     <script>
         // --- حالة التطبيق (State) ---
         let companies = [];
+        let editingCompanyId = null; // متغير لحفظ الـ ID أثناء التعديل
         const axisNames = { 'n': 'الشمالي', 'c': 'الوسط', 's': 'الجنوبي' };
 
         // --- نظام الحفظ التلقائي (Local Storage) ---
@@ -352,6 +356,7 @@
                 document.getElementById('plan-c-pct').value = '';
                 document.getElementById('plan-s-qty').value = '';
                 document.getElementById('plan-s-pct').value = '';
+                cancelEdit(); // الخروج من وضع التعديل إن وجد
                 calcFromQty(); // تصفير العرض الشهري
                 renderTable();
                 showToast('تم مسح البيانات بنجاح', 'success');
@@ -438,7 +443,7 @@
             calcFromQty(); 
         }
 
-        // --- إدارة الشركات ---
+        // --- إدارة الشركات والتعديل ---
         function addCompany(e) {
             e.preventDefault();
             
@@ -453,24 +458,83 @@
                 return;
             }
 
-            companies.push({
-                id: Date.now(), 
-                name, axis, port, qty, resp
-            });
+            if (editingCompanyId) {
+                // وضع التعديل
+                const index = companies.findIndex(c => c.id === editingCompanyId);
+                if(index !== -1) {
+                    companies[index] = { ...companies[index], name, axis, port, qty, resp };
+                    showToast('تم تحديث بيانات الشركة بنجاح', 'success');
+                }
+                cancelEdit(); // إعادة تهيئة النموذج
+            } else {
+                // وضع الإضافة الجديدة
+                companies.push({
+                    id: Date.now(), 
+                    name, axis, port, qty, resp
+                });
+                
+                document.getElementById('company-form').reset();
+                if (document.querySelector("#comp-resp")._flatpickr) {
+                    document.querySelector("#comp-resp")._flatpickr.clear();
+                }
+                document.getElementById('comp-axis').value = 'n'; 
+                showToast('تمت إضافة الشركة بنجاح', 'success');
+            }
 
+            renderTable();
+        }
+
+        function editCompany(id) {
+            const company = companies.find(c => c.id === id);
+            if(!company) return;
+
+            // تعبئة البيانات في النموذج
+            document.getElementById('comp-name').value = company.name;
+            document.getElementById('comp-axis').value = company.axis;
+            document.getElementById('comp-port').value = company.port === 'غير محدد' ? '' : company.port;
+            document.getElementById('comp-qty').value = company.qty;
+            
+            if (document.querySelector("#comp-resp")._flatpickr && company.resp) {
+                document.querySelector("#comp-resp")._flatpickr.setDate(company.resp);
+            } else {
+                document.getElementById('comp-resp').value = company.resp;
+            }
+
+            editingCompanyId = id;
+
+            // تغيير واجهة الأزرار للدلالة على التعديل
+            const submitBtn = document.getElementById('form-submit-btn');
+            document.getElementById('form-submit-text').innerText = 'تحديث';
+            document.getElementById('form-submit-icon').className = 'fa-solid fa-pen';
+            submitBtn.classList.replace('bg-accent', 'bg-blue-600');
+            submitBtn.classList.replace('hover:bg-green-600', 'hover:bg-blue-700');
+            document.getElementById('form-cancel-btn').classList.remove('hidden');
+
+            // التمرير صعوداً إلى النموذج برفق
+            document.getElementById('company-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function cancelEdit() {
+            editingCompanyId = null;
             document.getElementById('company-form').reset();
-            // مسح حقل التاريخ في الأداة الجديدة
+            
             if (document.querySelector("#comp-resp")._flatpickr) {
                 document.querySelector("#comp-resp")._flatpickr.clear();
             }
-            document.getElementById('comp-axis').value = 'n'; 
-            
-            showToast('تمت إضافة الشركة بنجاح', 'success');
-            renderTable();
+            document.getElementById('comp-axis').value = 'n';
+
+            // استعادة الأزرار لوضع الإضافة
+            const submitBtn = document.getElementById('form-submit-btn');
+            document.getElementById('form-submit-text').innerText = 'إضافة';
+            document.getElementById('form-submit-icon').className = 'fa-solid fa-plus';
+            submitBtn.classList.replace('bg-blue-600', 'bg-accent');
+            submitBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-600');
+            document.getElementById('form-cancel-btn').classList.add('hidden');
         }
 
         function deleteCompany(id) {
             companies = companies.filter(c => c.id !== id);
+            if(editingCompanyId === id) cancelEdit(); // الخروج من التعديل إن كنا نعدل نفس الشركة المحذوفة
             showToast('تم حذف الشركة', 'success');
             renderTable();
         }
@@ -559,9 +623,14 @@
                     <td class="text-center text-green-600 font-bold">% ${pctAxisPlanned}</td>
                     <td class="text-center text-purple-600 font-bold">% ${pctGlobalActual}</td>
                     <td class="text-center">
-                        <button onclick="deleteCompany(${c.id})" class="text-red-500 hover:text-red-700 transition-colors p-1" title="حذف">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        <div class="flex justify-center gap-2">
+                            <button onclick="editCompany(${c.id})" class="text-blue-500 hover:text-blue-700 transition-colors p-1" title="تعديل">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteCompany(${c.id})" class="text-red-500 hover:text-red-700 transition-colors p-1" title="حذف">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
