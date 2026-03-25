@@ -47,7 +47,11 @@
         
         /* إعدادات التمرير وتثبيت الأعمدة (Sticky Columns) */
         .table-container { overflow-x: auto; max-width: 100%; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1200px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        
+        /* تطبيق العرض الكبير للجدول الرئيسي فقط لمنع تكسر ملخصات الشركات والمنافذ */
+        #data-table { min-width: 1200px; }
+        
         th { padding: 1rem; text-align: right; font-weight: 600; white-space: nowrap; border-bottom: 2px solid #e5e7eb; }
         td { padding: 1rem; border-bottom: 1px solid #e5e7eb; color: #374151; }
         tr:last-child td { border-bottom: none; }
@@ -276,9 +280,9 @@
             </div>
 
             <!-- جداول ملخص الإجماليات -->
-            <div class="mt-8 border-t pt-6 hidden flex-col lg:flex-row gap-6" id="summary-sections-container">
+            <div class="mt-8 border-t pt-6 hidden flex-col lg:flex-row gap-6 w-full" id="summary-sections-container">
                 <!-- ملخص إجماليات الشركات -->
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
                         <i class="fa-solid fa-chart-bar text-secondary"></i> ملخص إجمالي كميات الشركات
                     </h3>
@@ -299,7 +303,7 @@
                 </div>
 
                 <!-- ملخص إجماليات المنافذ -->
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
                         <i class="fa-solid fa-truck-fast text-secondary"></i> ملخص التجميع وفق منفذ التصدير
                     </h3>
@@ -330,7 +334,7 @@
 
     <!-- نافذة التقرير الهرمي والتصدير -->
     <div id="report-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex justify-center items-center overflow-y-auto pt-10 pb-10">
-        <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-4/5 lg:w-3/4 max-h-[90vh] flex flex-col">
+        <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-full lg:w-11/12 max-h-[95vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl shrink-0">
                 <h3 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-sitemap text-indigo-600"></i> التقرير الهرمي الشامل وتصدير البيانات</h3>
                 <button onclick="closeReportModal()" class="text-gray-500 hover:text-red-500 text-3xl font-bold transition-colors leading-none">&times;</button>
@@ -894,19 +898,29 @@
                     .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
                     .r-axis-card { background: white; border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
                     .r-axis-title { font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 10px; }
-                    .r-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
-                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; }
+                    
+                    /* تحسينات الجدول لاستيعاب كافة الأعمدة بشكل احترافي */
+                    .r-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 8px 5px; text-align: center; vertical-align: middle; }
+                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 11px; white-space: nowrap; }
                     .r-table tr:nth-child(even) { background-color: #f8fafc; }
+                    .r-table td.nowrap { white-space: nowrap; }
+                    .r-table td.notes-col { font-size: 11px; color: #4b5563; max-width: 160px; word-wrap: break-word; }
+                    
                     .r-empty { color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; padding: 10px; }
-                    @media print { .r-grid { display: flex; justify-content: space-between; gap: 10px; } .r-axis-card { flex: 1; } }
+                    @media print { 
+                        @page { size: landscape; margin: 1cm; }
+                        .r-grid { display: flex; justify-content: space-between; gap: 10px; } 
+                        .r-axis-card { flex: 1; } 
+                        .r-table th, .r-table td { padding: 4px; font-size: 10px; }
+                    }
                 </style>
             `;
 
             let html = `<div id="report-content" class="report-body">
                 <div class="r-header">
                     <h3 style="color: #64748b; font-size: 16px; margin-bottom: 5px; font-weight: bold;">شركة تسويق النفط (SOMO) - هيئة تسويق المنتجات النفطية</h3>
-                    <h1 class="r-title">تقرير إدارة وتخصيص الصادرات (هرمي)</h1>
+                    <h1 class="r-title">تقرير إدارة وتخصيص الصادرات (التقرير الشامل)</h1>
                     <div class="r-date">تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</div>
                 </div>
                 
@@ -938,7 +952,7 @@
             html += `
                 <div class="r-section" style="border-color: #bbf7d0; background-color: #f0fdf4;">
                     <div class="r-sec-title" style="color: #166534; border-color: #bbf7d0;">
-                        <span>ثانياً: الإجمالي المخصص (الفعلي)</span>
+                        <span>ثانياً: التفاصيل الشاملة للتخصيص الفعلي</span>
                         <span class="r-total-badge" style="background-color: #166534; font-size:14px;">يومي: ${actualTotals.all.toLocaleString()} | شهري: ${(actualTotals.all*30).toLocaleString()}</span>
                     </div>
             `;
@@ -960,13 +974,17 @@
                         <table class="r-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 5%;">ت</th>
-                                    <th style="width: 25%;">اسم الشركة</th>
-                                    <th style="width: 15%;">منفذ التصدير</th>
-                                    <th style="width: 10%;">الكمية (يومي)</th>
-                                    <th style="width: 10%;">الكمية (شهري)</th>
-                                    <th style="width: 10%;">العلاوة</th>
-                                    <th style="width: 25%;">ملاحظات</th>
+                                    <th>ت</th>
+                                    <th>اسم الشركة</th>
+                                    <th>منفذ التصدير</th>
+                                    <th>الكمية (يومي)</th>
+                                    <th>الكمية (شهري)</th>
+                                    <th>العلاوة</th>
+                                    <th>وقت وتاريخ الإجابة</th>
+                                    <th title="% من الإجمالي الفعلي للمحور">% (فعلي)</th>
+                                    <th title="% من المخطط للمحور">% (مخطط)</th>
+                                    <th title="% من التخصيص الكلي">% (كلي)</th>
+                                    <th>ملاحظات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -974,15 +992,34 @@
                     let sortedComps = [...companiesByAxis[ax]].sort((a,b) => b.qty - a.qty);
                     sortedComps.forEach((c, idx) => {
                         let premiumDisplay = (c.premium !== '' && c.premium !== undefined) ? c.premium : '-';
+                        
+                        let pctAxisActual = actualTotals[ax] > 0 ? ((c.qty / actualTotals[ax]) * 100).toFixed(1) : '0.0';
+                        let pctAxisPlanned = axisPlanned[ax] > 0 ? ((c.qty / axisPlanned[ax]) * 100).toFixed(1) : '0.0';
+                        let pctGlobalActual = actualTotals.all > 0 ? ((c.qty / actualTotals.all) * 100).toFixed(1) : '0.0';
+
+                        let respDisplay = '-';
+                        if(c.resp) {
+                            let d = new Date(c.resp);
+                            if(!isNaN(d)) {
+                                respDisplay = d.toLocaleString('ar-EG', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            } else {
+                                respDisplay = c.resp; 
+                            }
+                        }
+
                         html += `
                             <tr>
                                 <td>${idx + 1}</td>
-                                <td style="text-align: right; font-weight: bold;">${c.name}</td>
-                                <td>${c.port || '-'}</td>
+                                <td style="text-align: right; font-weight: bold;" class="nowrap">${c.name}</td>
+                                <td class="nowrap">${c.port || '-'}</td>
                                 <td style="color: #0369a1; font-weight: bold;">${c.qty.toLocaleString()}</td>
                                 <td style="color: #4338ca; font-weight: bold;">${(c.qty*30).toLocaleString()}</td>
                                 <td dir="ltr" style="font-weight: bold;">${premiumDisplay}</td>
-                                <td style="font-size: 12px; color: #4b5563;">${c.notes || ''}</td>
+                                <td dir="ltr" class="nowrap">${respDisplay}</td>
+                                <td style="color: #2563eb; font-weight: bold;">%${pctAxisActual}</td>
+                                <td style="color: #16a34a; font-weight: bold;">%${pctAxisPlanned}</td>
+                                <td style="color: #9333ea; font-weight: bold;">%${pctGlobalActual}</td>
+                                <td class="notes-col">${c.notes || '-'}</td>
                             </tr>
                         `;
                     });
@@ -1077,7 +1114,8 @@
                 filename:     'التقرير_الهرمي_للصادرات.pdf',
                 image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                // تم التعديل لتكون الورقة بالعرض Landscape لتسع الجدول الشامل
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
             showToast('جاري تجهيز ملف PDF...', 'success');
             html2pdf().set(opt).from(element).save().then(() => {
@@ -1087,7 +1125,8 @@
 
         function exportToWord() {
             const content = document.getElementById('report-container').innerHTML;
-            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>تقرير التصدير</title></head><body>";
+            // إضافة أمر لتوجيه برنامج Word لفتح المستند بشكل أفقي (Landscape)
+            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>تقرير التصدير</title><style>@page { size: 29.7cm 21cm; margin: 1cm; } mso-page-orientation: landscape;</style></head><body>";
             const footer = "</body></html>";
             const sourceHTML = header + content + footer;
             
