@@ -170,7 +170,7 @@
                 <i class="fa-solid fa-building-user text-secondary"></i> تخصيص الكميات للشركات
             </h2>
             
-            <form id="company-form" onsubmit="addCompany(event)" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+            <form id="company-form" onsubmit="addCompany(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div class="md:col-span-1">
                     <label class="block text-sm font-bold text-gray-700 mb-1">اسم الشركة <span class="text-red-500">*</span></label>
                     <input type="text" id="comp-name" class="input-field" placeholder="مثال: شركة الأفق" required>
@@ -186,8 +186,11 @@
                 </div>
 
                 <div class="md:col-span-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">منفذ التصدير</label>
-                    <input type="text" id="comp-port" class="input-field" placeholder="مثال: غربي-سوري">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">منفذ التصدير <span class="text-red-500">*</span></label>
+                    <select id="comp-port" class="input-field" required>
+                        <option value="غربي - سوري">غربي - سوري</option>
+                        <option value="غربي - أردني">غربي - أردني</option>
+                    </select>
                 </div>
                 
                 <div class="md:col-span-1">
@@ -198,6 +201,11 @@
                 <div class="md:col-span-1">
                     <label class="block text-sm font-bold text-gray-700 mb-1">وقت وتاريخ الإجابة <span class="text-red-500">*</span></label>
                     <input type="text" id="comp-resp" class="input-field bg-white cursor-pointer" placeholder="اختر التاريخ والوقت" required>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">ملاحظات</label>
+                    <input type="text" id="comp-notes" class="input-field" placeholder="أضف أي تفاصيل أو ملاحظات أخرى...">
                 </div>
                 
                 <div class="md:col-span-1 flex gap-2">
@@ -226,44 +234,70 @@
                 <table id="data-table">
                     <thead>
                         <tr>
-                            <th>المحور</th>
-                            <th>الشركة</th>
-                            <th>منفذ التصدير</th>
-                            <th>الكمية (يومي)</th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('id')">ت <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('name')">اسم الشركة <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('axis')">المحور <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('port')">منفذ التصدير <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('qty')">الكمية (يومي) <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
                             <th>الكمية (شهري)</th>
-                            <th>وقت وتاريخ الإجابة</th>
+                            <th class="cursor-pointer hover:bg-blue-800 transition-colors" title="ترتيب" onclick="sortTable('resp')">وقت وتاريخ الإجابة <i class="fa-solid fa-sort text-gray-300 ml-1 text-xs"></i></th>
                             <th title="نسبة الشركة من إجمالي ما تم توزيعه فعلياً في نفس محورها">% من الإجمالي الفعلي للمحور</th>
                             <th title="نسبة الشركة من الهدف المخطط لمحورها">% من المخطط للمحور</th>
                             <th title="نسبة الشركة من الإجمالي العام لكل المحاور">% من التخصيص الكلي</th>
+                            <th>ملاحظات</th>
                             <th>إجراء</th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
                         <tr>
-                            <td colspan="10" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً. قم بإضافة شركات في النموذج أعلاه.</td>
+                            <td colspan="12" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً. قم بإضافة شركات في النموذج أعلاه.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- جدول ملخص إجماليات الشركات -->
-            <div class="mt-8 border-t pt-6 hidden" id="company-summary-section">
-                <h3 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-bar text-secondary"></i> ملخص إجمالي كميات الشركات (مجمعة من كافة المحاور)
-                </h3>
-                <div class="table-container rounded-lg border border-gray-200">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-100 text-gray-700">
-                            <tr>
-                                <th class="py-2 px-4 text-right border-b">اسم الشركة</th>
-                                <th class="py-2 px-4 text-right border-b">المحاور النشطة</th>
-                                <th class="py-2 px-4 text-center border-b">إجمالي الكمية (طن/يوم)</th>
-                                <th class="py-2 px-4 text-center border-b">إجمالي الكمية (طن/شهر)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="company-summary-body">
-                        </tbody>
-                    </table>
+            <!-- جداول ملخص الإجماليات -->
+            <div class="mt-8 border-t pt-6 hidden flex-col lg:flex-row gap-6" id="summary-sections-container">
+                <!-- ملخص إجماليات الشركات -->
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-bar text-secondary"></i> ملخص إجمالي كميات الشركات
+                    </h3>
+                    <div class="table-container rounded-lg border border-gray-200">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 text-gray-700">
+                                <tr>
+                                    <th class="py-2 px-4 text-right border-b">اسم الشركة</th>
+                                    <th class="py-2 px-4 text-right border-b">المحاور النشطة</th>
+                                    <th class="py-2 px-4 text-center border-b">إجمالي (يومي)</th>
+                                    <th class="py-2 px-4 text-center border-b">إجمالي (شهري)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="company-summary-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ملخص إجماليات المنافذ -->
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-truck-fast text-secondary"></i> ملخص التجميع وفق منفذ التصدير
+                    </h3>
+                    <div class="table-container rounded-lg border border-gray-200">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 text-gray-700">
+                                <tr>
+                                    <th class="py-2 px-4 text-right border-b">منفذ التصدير</th>
+                                    <th class="py-2 px-4 text-center border-b">الشركات الناقلة</th>
+                                    <th class="py-2 px-4 text-center border-b">إجمالي (يومي)</th>
+                                    <th class="py-2 px-4 text-center border-b">إجمالي (شهري)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="port-summary-body">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -299,6 +333,7 @@
         // --- حالة التطبيق (State) ---
         let companies = [];
         let editingCompanyId = null; // متغير لحفظ الـ ID أثناء التعديل
+        let sortConfig = { key: null, direction: 'asc' }; // حالة الفرز
         const axisNames = { 'n': 'الشمالي', 'c': 'الوسط', 's': 'الجنوبي' };
 
         // --- نظام الحفظ التلقائي (Local Storage) ---
@@ -449,9 +484,10 @@
             
             const name = document.getElementById('comp-name').value.trim();
             const axis = document.getElementById('comp-axis').value;
-            const port = document.getElementById('comp-port').value.trim() || 'غير محدد';
+            const port = document.getElementById('comp-port').value;
             const qty = parseFloat(document.getElementById('comp-qty').value);
             const resp = document.getElementById('comp-resp').value;
+            const notes = document.getElementById('comp-notes').value.trim();
             
             if (qty <= 0) {
                 showToast('يجب أن تكون الكمية المخصصة أكبر من صفر', 'error');
@@ -462,7 +498,7 @@
                 // وضع التعديل
                 const index = companies.findIndex(c => c.id === editingCompanyId);
                 if(index !== -1) {
-                    companies[index] = { ...companies[index], name, axis, port, qty, resp };
+                    companies[index] = { ...companies[index], name, axis, port, qty, resp, notes };
                     showToast('تم تحديث بيانات الشركة بنجاح', 'success');
                 }
                 cancelEdit(); // إعادة تهيئة النموذج
@@ -470,7 +506,7 @@
                 // وضع الإضافة الجديدة
                 companies.push({
                     id: Date.now(), 
-                    name, axis, port, qty, resp
+                    name, axis, port, qty, resp, notes
                 });
                 
                 document.getElementById('company-form').reset();
@@ -478,6 +514,7 @@
                     document.querySelector("#comp-resp")._flatpickr.clear();
                 }
                 document.getElementById('comp-axis').value = 'n'; 
+                document.getElementById('comp-port').value = 'غربي - سوري'; 
                 showToast('تمت إضافة الشركة بنجاح', 'success');
             }
 
@@ -491,8 +528,9 @@
             // تعبئة البيانات في النموذج
             document.getElementById('comp-name').value = company.name;
             document.getElementById('comp-axis').value = company.axis;
-            document.getElementById('comp-port').value = company.port === 'غير محدد' ? '' : company.port;
+            document.getElementById('comp-port').value = company.port || 'غربي - سوري';
             document.getElementById('comp-qty').value = company.qty;
+            document.getElementById('comp-notes').value = company.notes || '';
             
             if (document.querySelector("#comp-resp")._flatpickr && company.resp) {
                 document.querySelector("#comp-resp")._flatpickr.setDate(company.resp);
@@ -522,6 +560,7 @@
                 document.querySelector("#comp-resp")._flatpickr.clear();
             }
             document.getElementById('comp-axis').value = 'n';
+            document.getElementById('comp-port').value = 'غربي - سوري';
 
             // استعادة الأزرار لوضع الإضافة
             const submitBtn = document.getElementById('form-submit-btn');
@@ -539,12 +578,43 @@
             renderTable();
         }
 
+        function sortTable(key) {
+            if (sortConfig.key === key) {
+                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortConfig.key = key;
+                sortConfig.direction = 'asc';
+            }
+
+            companies.sort((a, b) => {
+                let valA = a[sortConfig.key];
+                let valB = b[sortConfig.key];
+                
+                if (sortConfig.key === 'qty' || sortConfig.key === 'id') {
+                    valA = Number(valA); valB = Number(valB);
+                } else if (sortConfig.key === 'resp') {
+                    valA = valA ? new Date(valA).getTime() : 0;
+                    valB = valB ? new Date(valB).getTime() : 0;
+                } else {
+                    valA = String(valA || '').toLowerCase();
+                    valB = String(valB || '').toLowerCase();
+                }
+
+                if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            renderTable();
+        }
+
         function applyPriority() {
             if(companies.length === 0) {
                 showToast('لا توجد شركات لفرزها', 'error');
                 return;
             }
             
+            sortConfig = { key: 'resp', direction: 'asc' };
             companies.sort((a, b) => {
                 // الأولوية للوقت والتاريخ الأقدم
                 let dateA = a.resp ? new Date(a.resp).getTime() : Infinity;
@@ -560,25 +630,30 @@
         function renderTable() {
             const tbody = document.getElementById('table-body');
             const statsPanel = document.getElementById('stats-panel');
-            const compSummarySection = document.getElementById('company-summary-section');
+            const summarySections = document.getElementById('summary-sections-container');
             const compSummaryBody = document.getElementById('company-summary-body');
+            const portSummaryBody = document.getElementById('port-summary-body');
             
-            updateMonthlyDisplays(); // تحديث أرقام المخطط في حال تم استدعاء الداله مباشرة
+            updateMonthlyDisplays();
 
             if (companies.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-gray-500 py-8">لا توجد شركات مضافة حالياً.</td></tr>';
                 statsPanel.innerHTML = '';
-                compSummarySection.classList.add('hidden');
+                summarySections.classList.add('hidden');
+                summarySections.classList.remove('flex');
                 return;
             }
 
             tbody.innerHTML = '';
-            compSummarySection.classList.remove('hidden');
+            summarySections.classList.remove('hidden');
+            summarySections.classList.add('flex');
+
             let planned = getPlannedVals();
             let axisPlanned = { 'n': planned.nQ, 'c': planned.cQ, 's': planned.sQ };
             
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
-            let companyTotals = {}; // تجميع حسب اسم الشركة
+            let companyTotals = {}; 
+            let portTotals = {};
 
             companies.forEach(c => {
                 actualTotals[c.axis] += c.qty;
@@ -589,9 +664,15 @@
                 if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
                 companyTotals[compKey].daily += c.qty;
                 companyTotals[compKey].axes.add(axisNames[c.axis]);
+
+                // تجميع بيانات المنافذ
+                let portKey = c.port || 'غير محدد';
+                if(!portTotals[portKey]) portTotals[portKey] = { daily: 0, companies: new Set() };
+                portTotals[portKey].daily += c.qty;
+                portTotals[portKey].companies.add(c.name.trim());
             });
 
-            companies.forEach(c => {
+            companies.forEach((c, index) => {
                 let row = document.createElement('tr');
                 
                 // تنسيق تاريخ ووقت الإجابة
@@ -613,15 +694,17 @@
                 let pctGlobalActual = actualTotals.all > 0 ? ((c.qty / actualTotals.all) * 100).toFixed(1) : '0.0';
 
                 row.innerHTML = `
+                    <td class="text-center text-gray-500 text-sm">${index + 1}</td>
+                    <td class="font-bold text-gray-900">${c.name}</td>
                     <td class="font-semibold text-primary">${axisNames[c.axis]}</td>
-                    <td class="font-bold">${c.name}</td>
-                    <td>${c.port || '-'}</td>
+                    <td><span class="bg-gray-100 px-2 py-1 rounded border border-gray-200 text-sm whitespace-nowrap">${c.port || '-'}</span></td>
                     <td class="text-center font-bold text-gray-800">${c.qty.toLocaleString()}</td>
                     <td class="text-center font-bold text-indigo-600">${qtyMonthly.toLocaleString()}</td>
-                    <td class="text-center" dir="ltr"><span class="bg-gray-100 px-2 py-1 rounded text-sm whitespace-nowrap">${respDisplay}</span></td>
+                    <td class="text-center" dir="ltr"><span class="bg-gray-50 px-2 py-1 rounded text-sm whitespace-nowrap border">${respDisplay}</span></td>
                     <td class="text-center text-blue-600 font-bold">% ${pctAxisActual}</td>
                     <td class="text-center text-green-600 font-bold">% ${pctAxisPlanned}</td>
                     <td class="text-center text-purple-600 font-bold">% ${pctGlobalActual}</td>
+                    <td class="text-sm text-gray-600 max-w-xs truncate" title="${c.notes || ''}">${c.notes || '-'}</td>
                     <td class="text-center">
                         <div class="flex justify-center gap-2">
                             <button onclick="editCompany(${c.id})" class="text-blue-500 hover:text-blue-700 transition-colors p-1" title="تعديل">
@@ -644,11 +727,26 @@
                 row.className = "bg-white hover:bg-gray-50";
                 row.innerHTML = `
                     <td class="py-2 px-4 border-b font-bold">${compName}</td>
-                    <td class="py-2 px-4 border-b text-gray-600">${Array.from(data.axes).join(' ، ')}</td>
+                    <td class="py-2 px-4 border-b text-gray-600 text-xs">${Array.from(data.axes).join(' ، ')}</td>
                     <td class="py-2 px-4 border-b text-center font-bold text-gray-800">${data.daily.toLocaleString()}</td>
                     <td class="py-2 px-4 border-b text-center font-bold text-indigo-600">${(data.daily * 30).toLocaleString()}</td>
                 `;
                 compSummaryBody.appendChild(row);
+            });
+
+            // تحديث جدول ملخص المنافذ
+            portSummaryBody.innerHTML = '';
+            Object.keys(portTotals).forEach(portName => {
+                let data = portTotals[portName];
+                let row = document.createElement('tr');
+                row.className = "bg-white hover:bg-gray-50";
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b font-bold text-primary">${portName}</td>
+                    <td class="py-2 px-4 border-b text-gray-600 text-xs text-center">${data.companies.size} شركة</td>
+                    <td class="py-2 px-4 border-b text-center font-bold text-gray-800">${data.daily.toLocaleString()}</td>
+                    <td class="py-2 px-4 border-b text-center font-bold text-green-600">${(data.daily * 30).toLocaleString()}</td>
+                `;
+                portSummaryBody.appendChild(row);
             });
 
             // تحديث لوحة الإحصائيات السفلية للمحاور
@@ -695,9 +793,9 @@
 
             let csvContent = '\uFEFF'; 
             
-            csvContent += "المحور,الشركة,منفذ التصدير,الكمية المخصصة (طن/يوم),الكمية المخصصة (طن/شهر),وقت وتاريخ الإجابة,% من الإجمالي الفعلي للمحور,% من المخطط للمحور,% من التخصيص الكلي\n";
+            csvContent += "ت,اسم الشركة,المحور,منفذ التصدير,الكمية المخصصة (طن/يوم),الكمية المخصصة (طن/شهر),وقت وتاريخ الإجابة,% من الإجمالي الفعلي للمحور,% من المخطط للمحور,% من التخصيص الكلي,ملاحظات\n";
 
-            companies.forEach(c => {
+            companies.forEach((c, index) => {
                 let pctAxisActual = actualTotals[c.axis] > 0 ? ((c.qty / actualTotals[c.axis]) * 100).toFixed(1) : 0;
                 let plannedForAxis = planned[`${c.axis}Q`];
                 let pctAxisPlanned = plannedForAxis > 0 ? ((c.qty / plannedForAxis) * 100).toFixed(1) : 0;
@@ -712,8 +810,9 @@
                 let qtyMonthly = c.qty * 30;
                 let safeName = c.name.replace(/,/g, ' '); 
                 let safePort = (c.port || '').replace(/,/g, ' '); 
+                let safeNotes = (c.notes || '').replace(/,/g, ' - ').replace(/\n/g, ' '); 
                 
-                csvContent += `${axisNames[c.axis]},${safeName},${safePort},${c.qty},${qtyMonthly},${respDisplay},${pctAxisActual}%,${pctAxisPlanned}%,${pctGlobalActual}%\n`;
+                csvContent += `${index + 1},${safeName},${axisNames[c.axis]},${safePort},${c.qty},${qtyMonthly},${respDisplay},${pctAxisActual}%,${pctAxisPlanned}%,${pctGlobalActual}%,${safeNotes}\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -745,7 +844,8 @@
             
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
             let companiesByAxis = { 'n': [], 'c': [], 's': [] };
-            let companyTotals = {}; // لحساب إجماليات الشركات
+            let companyTotals = {}; 
+            let portTotals = {};
 
             companies.forEach(c => {
                 actualTotals[c.axis] += c.qty;
@@ -756,6 +856,11 @@
                 if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
                 companyTotals[compKey].daily += c.qty;
                 companyTotals[compKey].axes.add(axisNames[c.axis]);
+
+                let portKey = c.port || 'غير محدد';
+                if(!portTotals[portKey]) portTotals[portKey] = { daily: 0, companies: new Set() };
+                portTotals[portKey].daily += c.qty;
+                portTotals[portKey].companies.add(c.name.trim());
             });
 
             const reportStyle = `
@@ -836,25 +941,26 @@
                         <table class="r-table">
                             <thead>
                                 <tr>
-                                    <th>اسم الشركة</th>
-                                    <th>منفذ التصدير</th>
-                                    <th>الكمية (طن/يوم)</th>
-                                    <th>الكمية (طن/شهر)</th>
-                                    <th>% من المحور</th>
+                                    <th style="width: 5%;">ت</th>
+                                    <th style="width: 25%;">اسم الشركة</th>
+                                    <th style="width: 15%;">منفذ التصدير</th>
+                                    <th style="width: 15%;">الكمية (طن/يوم)</th>
+                                    <th style="width: 15%;">الكمية (طن/شهر)</th>
+                                    <th style="width: 25%;">ملاحظات</th>
                                 </tr>
                             </thead>
                             <tbody>
                     `;
                     let sortedComps = [...companiesByAxis[ax]].sort((a,b) => b.qty - a.qty);
-                    sortedComps.forEach(c => {
-                        let pct = actualTotals[ax] > 0 ? ((c.qty/actualTotals[ax])*100).toFixed(1) : 0;
+                    sortedComps.forEach((c, idx) => {
                         html += `
                             <tr>
+                                <td>${idx + 1}</td>
                                 <td style="text-align: right; font-weight: bold;">${c.name}</td>
                                 <td>${c.port || '-'}</td>
                                 <td style="color: #0369a1; font-weight: bold;">${c.qty.toLocaleString()}</td>
                                 <td style="color: #4338ca; font-weight: bold;">${(c.qty*30).toLocaleString()}</td>
-                                <td>%${pct}</td>
+                                <td style="font-size: 12px; color: #4b5563;">${c.notes || ''}</td>
                             </tr>
                         `;
                     });
@@ -869,10 +975,11 @@
 
             // المستوى الثالث: إجمالي الشركات
             html += `
-                <div class="r-section" style="border-color: #c7d2fe; background-color: #eef2ff;">
-                    <div class="r-sec-title" style="color: #4338ca; border-color: #c7d2fe;">
-                        <span>ثالثاً: ملخص إجمالي الشركات (من كافة المحاور)</span>
-                    </div>
+                <div style="display: flex; gap: 20px; page-break-inside: avoid;">
+                    <div class="r-section" style="flex: 1; border-color: #c7d2fe; background-color: #eef2ff;">
+                        <div class="r-sec-title" style="color: #4338ca; border-color: #c7d2fe;">
+                            <span>ثالثاً: ملخص إجمالي الشركات</span>
+                        </div>
             `;
             
             if(Object.keys(companyTotals).length > 0) {
@@ -881,20 +988,17 @@
                         <thead>
                             <tr>
                                 <th>اسم الشركة</th>
-                                <th>المحاور النشطة بها</th>
-                                <th>إجمالي الكمية (طن/يوم)</th>
-                                <th>إجمالي الكمية (طن/شهر)</th>
+                                <th>إجمالي (يومي)</th>
+                                <th>إجمالي (شهري)</th>
                             </tr>
                         </thead>
                         <tbody>
                 `;
-                // ترتيب حسب الكمية الإجمالية
                 let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
                 sortedTotals.forEach(([compName, data]) => {
                     html += `
                         <tr>
                             <td style="text-align: right; font-weight: bold;">${compName}</td>
-                            <td>${Array.from(data.axes).join(' ، ')}</td>
                             <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
                             <td style="color: #4338ca; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
                         </tr>
@@ -903,6 +1007,41 @@
                 html += `</tbody></table></div>`;
             } else {
                 html += `<div class="r-empty">لا توجد بيانات للشركات لعرضها.</div></div>`;
+            }
+
+            // المستوى الرابع: إجمالي المنافذ
+            html += `
+                    <div class="r-section" style="flex: 1; border-color: #fde68a; background-color: #fffbeb;">
+                        <div class="r-sec-title" style="color: #b45309; border-color: #fde68a;">
+                            <span>رابعاً: التجميع وفق منفذ التصدير</span>
+                        </div>
+            `;
+            
+            if(Object.keys(portTotals).length > 0) {
+                html += `
+                    <table class="r-table">
+                        <thead>
+                            <tr>
+                                <th>منفذ التصدير</th>
+                                <th>إجمالي (يومي)</th>
+                                <th>إجمالي (شهري)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                let sortedPorts = Object.entries(portTotals).sort((a,b) => b[1].daily - a[1].daily);
+                sortedPorts.forEach(([portName, data]) => {
+                    html += `
+                        <tr>
+                            <td style="text-align: right; font-weight: bold;">${portName}</td>
+                            <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
+                            <td style="color: #b45309; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody></table></div></div>`;
+            } else {
+                html += `<div class="r-empty">لا توجد بيانات للمنافذ لعرضها.</div></div></div>`;
             }
 
             html += `</div>`; // نهاية التقرير
@@ -949,6 +1088,7 @@
             let actualTotals = { 'n': 0, 'c': 0, 's': 0, 'all': 0 };
             
             let companyTotals = {};
+            let portTotals = {};
 
             companies.forEach(c => { 
                 actualTotals[c.axis] += c.qty; 
@@ -958,6 +1098,11 @@
                 if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
                 companyTotals[compKey].daily += c.qty;
                 companyTotals[compKey].axes.add(axisNames[c.axis]);
+
+                let portKey = c.port || 'غير محدد';
+                if(!portTotals[portKey]) portTotals[portKey] = { daily: 0, companies: new Set() };
+                portTotals[portKey].daily += c.qty;
+                portTotals[portKey].companies.add(c.name.trim());
             });
             
             // --- الشيت 1: الملخص الإداري ---
@@ -980,15 +1125,10 @@
 
             // --- الشيت 2: تفاصيل التخصيص ---
             const detailsData = [
-                ["المحور", "اسم الشركة", "منفذ التصدير", "الكمية (طن/يوم)", "الكمية (طن/شهر)", "% من المحور", "% من المخطط", "وقت وتاريخ الإجابة"]
+                ["ت", "اسم الشركة", "المحور", "منفذ التصدير", "الكمية (طن/يوم)", "الكمية (طن/شهر)", "% من المحور", "% من المخطط", "وقت وتاريخ الإجابة", "ملاحظات"]
             ];
             
-            const sortedCompanies = [...companies].sort((a,b) => {
-                if (a.axis !== b.axis) return a.axis.localeCompare(b.axis);
-                return b.qty - a.qty; 
-            });
-            
-            sortedCompanies.forEach(c => {
+            companies.forEach((c, index) => {
                 let pctAxisActual = actualTotals[c.axis] > 0 ? ((c.qty / actualTotals[c.axis]) * 100).toFixed(1) + '%' : '0%';
                 let pctAxisPlanned = axisPlanned[c.axis] > 0 ? ((c.qty / axisPlanned[c.axis]) * 100).toFixed(1) + '%' : '0%';
                 
@@ -998,13 +1138,13 @@
                     respDisplay = !isNaN(d) ? d.toLocaleString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : c.resp;
                 }
 
-                detailsData.push([axisNames[c.axis], c.name, c.port || '', c.qty, c.qty*30, pctAxisActual, pctAxisPlanned, respDisplay]);
+                detailsData.push([index + 1, c.name, axisNames[c.axis], c.port || '', c.qty, c.qty*30, pctAxisActual, pctAxisPlanned, respDisplay, c.notes || '']);
             });
             
             const wsDetails = XLSX.utils.aoa_to_sheet(detailsData);
             if(!wsDetails['!views']) wsDetails['!views'] = [];
             wsDetails['!views'].push({rightToLeft: true});
-            wsDetails['!cols'] = [{wch: 15}, {wch: 30}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 25}];
+            wsDetails['!cols'] = [{wch: 5}, {wch: 30}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 25}, {wch: 40}];
             XLSX.utils.book_append_sheet(wb, wsDetails, "تفاصيل التخصيص");
 
             // --- الشيت 3: إجمالي الشركات ---
@@ -1022,6 +1162,22 @@
             wsCompTotals['!views'].push({rightToLeft: true});
             wsCompTotals['!cols'] = [{wch: 30}, {wch: 30}, {wch: 25}, {wch: 25}];
             XLSX.utils.book_append_sheet(wb, wsCompTotals, "إجماليات الشركات");
+
+            // --- الشيت 4: التجميع وفق المنفذ ---
+            const portTotalsData = [
+                ["منفذ التصدير", "عدد الشركات الناقلة", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)"]
+            ];
+            
+            let sortedPorts = Object.entries(portTotals).sort((a,b) => b[1].daily - a[1].daily);
+            sortedPorts.forEach(([portName, data]) => {
+                portTotalsData.push([portName, data.companies.size, data.daily, data.daily * 30]);
+            });
+
+            const wsPortTotals = XLSX.utils.aoa_to_sheet(portTotalsData);
+            if(!wsPortTotals['!views']) wsPortTotals['!views'] = [];
+            wsPortTotals['!views'].push({rightToLeft: true});
+            wsPortTotals['!cols'] = [{wch: 25}, {wch: 20}, {wch: 25}, {wch: 25}];
+            XLSX.utils.book_append_sheet(wb, wsPortTotals, "التجميع وفق المنفذ");
 
             XLSX.writeFile(wb, "تقرير_احترافي_للتصدير.xlsx");
             showToast('تم تحميل ملف Excel الاحترافي بنجاح', 'success');
