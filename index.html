@@ -919,13 +919,22 @@
 
             // تحديث جدول ملخص الشركات
             compSummaryBody.innerHTML = '';
+            let sumDailyComp = 0;
+            let sumMonthlyComp = 0;
+            let sum3MonthsComp = 0;
+
             Object.keys(companyTotals).forEach(compName => {
                 let data = companyTotals[compName];
                 let row = document.createElement('tr');
                 row.className = "bg-white hover:bg-gray-50";
                 
-                let threeMonthsDisplay = compName === 'بركات الخير' ? '-' : (data.daily * 90).toLocaleString();
+                let threeMonthsValNum = compName === 'بركات الخير' ? 0 : (data.daily * 90);
+                let threeMonthsDisplay = compName === 'بركات الخير' ? '-' : threeMonthsValNum.toLocaleString();
                 let notesDisplay = Array.from(data.notes).join(' - ');
+
+                sumDailyComp += data.daily;
+                sumMonthlyComp += data.daily * 30;
+                sum3MonthsComp += threeMonthsValNum;
 
                 row.innerHTML = `
                     <td class="py-2 px-4 border-b font-bold">${compName}</td>
@@ -937,6 +946,20 @@
                 `;
                 compSummaryBody.appendChild(row);
             });
+
+            // إضافة صف المجموع الكلي
+            if(Object.keys(companyTotals).length > 0) {
+                let totalRow = document.createElement('tr');
+                totalRow.className = "bg-indigo-50 font-black border-t-2 border-indigo-200";
+                totalRow.innerHTML = `
+                    <td class="py-3 px-4 text-right text-indigo-900" colspan="2">المجموع الكلي</td>
+                    <td class="py-3 px-4 text-center text-indigo-900">${sumDailyComp.toLocaleString()}</td>
+                    <td class="py-3 px-4 text-center text-indigo-900">${sumMonthlyComp.toLocaleString()}</td>
+                    <td class="py-3 px-4 text-center text-indigo-900">${sum3MonthsComp.toLocaleString()}</td>
+                    <td class="py-3 px-4"></td>
+                `;
+                compSummaryBody.appendChild(totalRow);
+            }
 
             // تحديث جدول ملخص المنافذ
             portSummaryBody.innerHTML = '';
@@ -1071,38 +1094,38 @@
 
             const reportStyle = `
                 <style>
-                    .report-body { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; color: #1f2937; line-height: 1.6; }
-                    .r-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; }
-                    .r-title { color: #1e3a8a; font-size: 26px; font-weight: 800; margin: 0; }
-                    .r-date { color: #6b7280; font-size: 14px; margin-top: 5px; }
-                    .r-section { margin-bottom: 30px; padding: 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
-                    .r-sec-title { font-size: 20px; font-weight: bold; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;}
-                    .r-total-badge { background-color: #1e3a8a; color: white; padding: 4px 12px; border-radius: 20px; font-size: 16px; font-weight: bold; }
-                    .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-                    .r-axis-card { background: white; border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-                    .r-axis-title { font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 10px; }
+                    .report-body { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; color: #1f2937; line-height: 1.5; }
+                    .r-header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; }
+                    .r-title { color: #1e3a8a; font-size: 24px; font-weight: 800; margin: 0; }
+                    .r-date { color: #6b7280; font-size: 13px; margin-top: 5px; }
+                    .r-section { margin-bottom: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
+                    .r-sec-title { font-size: 18px; font-weight: bold; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
+                    .r-total-badge { background-color: #1e3a8a; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+                    .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+                    .r-axis-card { background: white; border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; padding: 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+                    .r-axis-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 8px; }
                     
-                    /* تحسينات الجدول لمنع الانقسام وتكرار العناوين */
-                    .r-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; page-break-inside: auto; }
+                    /* الجداول هنا تعتمد على العرض الثابت ولا تسمح بالانقطاع */
+                    .r-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; table-layout: fixed; page-break-inside: auto; }
                     .r-table thead { display: table-header-group; }
                     .r-table tr { page-break-inside: avoid; break-inside: avoid; }
-                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 8px 5px; text-align: center; vertical-align: middle; }
-                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 11px; white-space: nowrap; }
+                    /* السماح للكلمات بالالتفاف للسطر التالي بطريقة صحيحة */
+                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 6px 4px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
+                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 10px; }
                     .r-table tr:nth-child(even) { background-color: #f8fafc; }
-                    .r-table td.nowrap { white-space: nowrap; }
-                    .r-table td.name-col { max-width: 150px; font-weight: bold; text-align: right; white-space: normal; overflow-wrap: break-word; word-wrap: break-word; word-break: normal; line-height: 1.5; }
-                    .r-table td.notes-col { font-size: 11px; color: #4b5563; max-width: 250px; white-space: normal; overflow-wrap: break-word; word-wrap: break-word; word-break: normal; line-height: 1.6; text-align: right; }
+                    
+                    /* إعدادات النصوص للملاحظات وأسماء الشركات لتلتف بذكاء دون تشوهات */
+                    .r-table td.name-col { font-weight: bold; text-align: right; }
+                    .r-table td.notes-col { font-size: 10px; color: #4b5563; text-align: right; line-height: 1.5; }
                     
                     .r-empty { color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; padding: 10px; }
-                    
-                    /* حاوية إضافية لضمان عدم قطع أقسام المحاور */
-                    .axis-block { margin-bottom: 25px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
+                    .axis-block { margin-bottom: 20px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
                     
                     @media print { 
                         @page { size: landscape; margin: 1cm; }
                         .r-grid { display: flex; justify-content: space-between; gap: 10px; } 
                         .r-axis-card { flex: 1; } 
-                        .r-table th, .r-table td { padding: 4px; font-size: 10px; }
+                        .r-table th, .r-table td { padding: 4px; font-size: 9.5px; }
                         .r-section, .axis-block, tr { page-break-inside: avoid !important; break-inside: avoid !important; }
                     }
                 </style>
@@ -1112,7 +1135,7 @@
                 <div class="r-header">
                     <h3 style="color: #64748b; font-size: 16px; margin-bottom: 5px; font-weight: bold;">شركة تسويق النفط (SOMO) - هيئة تسويق المنتجات النفطية</h3>
                     <h1 class="r-title">تقرير إدارة وتخصيص الصادرات (التقرير الشامل)</h1>
-                    <div style="text-align:center; font-size: 18px; font-weight:bold; color:#b45309; margin-top: 10px;">قاعدة البيانات: ${getActiveDbName()}</div>
+                    <div style="text-align:center; font-size: 16px; font-weight:bold; color:#b45309; margin-top: 8px;">قاعدة البيانات: ${getActiveDbName()}</div>
                     <div class="r-date">تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</div>
                 </div>
                 
@@ -1120,7 +1143,7 @@
                 <div class="r-section">
                     <div class="r-sec-title">
                         <span>أولاً: الإجمالي المخطط</span>
-                        <span class="r-total-badge" style="font-size:14px;">يومي: ${planned.total.toLocaleString()} | شهري: ${(planned.total*30).toLocaleString()}</span>
+                        <span class="r-total-badge" style="font-size:13px;">يومي: ${planned.total.toLocaleString()} | شهري: ${(planned.total*30).toLocaleString()}</span>
                     </div>
                     
                     <div class="r-grid">
@@ -1131,9 +1154,9 @@
                 html += `
                     <div class="r-axis-card">
                         <div class="r-axis-title">المحور ${axisNames[ax]}</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #1e3a8a;">يومي: ${axisPlanned[ax].toLocaleString()} طن</div>
-                        <div style="font-size: 14px; font-weight: bold; color: #4338ca; margin-top: 4px;">شهري: ${(axisPlanned[ax]*30).toLocaleString()} طن</div>
-                        <div style="color: #64748b; font-size: 13px; margin-top: 5px;">النسبة من الكلي: %${pct}</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #1e3a8a;">يومي: ${axisPlanned[ax].toLocaleString()} طن</div>
+                        <div style="font-size: 13px; font-weight: bold; color: #4338ca; margin-top: 4px;">شهري: ${(axisPlanned[ax]*30).toLocaleString()} طن</div>
+                        <div style="color: #64748b; font-size: 12px; margin-top: 5px;">النسبة من الكلي: %${pct}</div>
                     </div>
                 `;
             });
@@ -1145,7 +1168,7 @@
                 <div class="r-section" style="border-color: #bbf7d0; background-color: #f0fdf4;">
                     <div class="r-sec-title" style="color: #166534; border-color: #bbf7d0;">
                         <span>ثانياً: التفاصيل الشاملة للتخصيص الفعلي</span>
-                        <span class="r-total-badge" style="background-color: #166534; font-size:14px;">يومي: ${actualTotals.all.toLocaleString()} | شهري: ${(actualTotals.all*30).toLocaleString()}</span>
+                        <span class="r-total-badge" style="background-color: #166534; font-size:13px;">يومي: ${actualTotals.all.toLocaleString()} | شهري: ${(actualTotals.all*30).toLocaleString()}</span>
                     </div>
             `;
 
@@ -1155,9 +1178,9 @@
                 
                 html += `
                     <div class="axis-block">
-                        <h4 style="font-size: 16px; font-weight: bold; color: #15803d; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                        <h4 style="font-size: 15px; font-weight: bold; color: #15803d; margin-bottom: 12px; display: flex; justify-content: space-between;">
                             <span>تفرع المحور ${axisNames[ax]}</span>
-                            <span>إجمالي التخصيص للمحور: ${actualTotals[ax].toLocaleString()} طن/يوم ${diffText}</span>
+                            <span>إجمالي التخصيص: ${actualTotals[ax].toLocaleString()} طن/يوم ${diffText}</span>
                         </h4>
                 `;
                 
@@ -1166,17 +1189,17 @@
                         <table class="r-table">
                             <thead>
                                 <tr>
-                                    <th>ت</th>
-                                    <th>اسم الشركة</th>
-                                    <th>منفذ التصدير</th>
-                                    <th>الكمية (يومي)</th>
-                                    <th>الكمية (شهري)</th>
-                                    <th>الحسم</th>
-                                    <th>وقت وتاريخ الإجابة</th>
-                                    <th title="% من الإجمالي الفعلي للمحور">% (فعلي)</th>
-                                    <th title="% من المخطط للمحور">% (مخطط)</th>
-                                    <th title="% من التخصيص الكلي">% (كلي)</th>
-                                    <th>ملاحظات</th>
+                                    <th style="width: 3%;">ت</th>
+                                    <th style="width: 14%;">اسم الشركة</th>
+                                    <th style="width: 9%;">منفذ التصدير</th>
+                                    <th style="width: 9%;">الكمية (يومي)</th>
+                                    <th style="width: 9%;">الكمية (شهري)</th>
+                                    <th style="width: 6%;">الحسم</th>
+                                    <th style="width: 12%;">وقت الإجابة</th>
+                                    <th style="width: 6%;">% (فعلي)</th>
+                                    <th style="width: 6%;">% (مخطط)</th>
+                                    <th style="width: 6%;">% (كلي)</th>
+                                    <th style="width: 20%;">ملاحظات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1203,11 +1226,11 @@
                             <tr>
                                 <td>${idx + 1}</td>
                                 <td class="name-col">${c.name}</td>
-                                <td class="nowrap">${c.port || '-'}</td>
+                                <td>${c.port || '-'}</td>
                                 <td style="color: #0369a1; font-weight: bold;">${c.qty.toLocaleString()}</td>
                                 <td style="color: #4338ca; font-weight: bold;">${(c.qty*30).toLocaleString()}</td>
                                 <td dir="ltr" style="font-weight: bold;">${premiumDisplay}</td>
-                                <td dir="ltr" class="nowrap">${respDisplay}</td>
+                                <td dir="ltr">${respDisplay}</td>
                                 <td style="color: #2563eb; font-weight: bold;">%${pctAxisActual}</td>
                                 <td style="color: #16a34a; font-weight: bold;">%${pctAxisPlanned}</td>
                                 <td style="color: #9333ea; font-weight: bold;">%${pctGlobalActual}</td>
@@ -1226,8 +1249,8 @@
 
             // المستوى الثالث: إجمالي الشركات
             html += `
-                <div style="display: flex; flex-wrap: wrap; gap: 20px; page-break-inside: avoid;">
-                    <div class="r-section" style="flex: 2; min-width: 300px; max-width: 100%; overflow-x: auto; border-color: #c7d2fe; background-color: #eef2ff;">
+                <div style="display: flex; gap: 15px; page-break-inside: avoid; align-items: flex-start;">
+                    <div class="r-section" style="flex: 2; margin-bottom: 0; border-color: #c7d2fe; background-color: #eef2ff;">
                         <div class="r-sec-title" style="color: #4338ca; border-color: #c7d2fe;">
                             <span>ثالثاً: ملخص إجمالي الشركات</span>
                         </div>
@@ -1238,32 +1261,53 @@
                     <table class="r-table">
                         <thead>
                             <tr>
-                                <th>اسم الشركة</th>
-                                <th>المحاور النشطة</th>
-                                <th>إجمالي (يومي)</th>
-                                <th>إجمالي (شهري)</th>
-                                <th>إجمالي (3 أشهر)</th>
-                                <th>ملاحظات</th>
+                                <th style="width: 25%;">اسم الشركة</th>
+                                <th style="width: 20%;">المحاور النشطة</th>
+                                <th style="width: 15%;">إجمالي (يومي)</th>
+                                <th style="width: 15%;">إجمالي (شهري)</th>
+                                <th style="width: 15%;">إجمالي (3 أشهر)</th>
+                                <th style="width: 10%;">ملاحظات</th>
                             </tr>
                         </thead>
                         <tbody>
                 `;
                 let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
+                let sumDailyCompReport = 0;
+                let sumMonthlyCompReport = 0;
+                let sum3MonthsCompReport = 0;
+
                 sortedTotals.forEach(([compName, data]) => {
-                    let threeMonthsDisplay = compName === 'بركات الخير' ? '-' : (data.daily * 90).toLocaleString();
+                    let threeMonthsValNum = compName === 'بركات الخير' ? 0 : (data.daily * 90);
+                    let threeMonthsDisplay = compName === 'بركات الخير' ? '-' : threeMonthsValNum.toLocaleString();
                     let notesDisplay = Array.from(data.notes).join(' - ');
+
+                    sumDailyCompReport += data.daily;
+                    sumMonthlyCompReport += data.daily * 30;
+                    sum3MonthsCompReport += threeMonthsValNum;
 
                     html += `
                         <tr>
-                            <td class="name-col">${compName}</td>
+                            <td class="name-col" style="text-align:right;">${compName}</td>
                             <td>${Array.from(data.axes).join(' ، ')}</td>
                             <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
                             <td style="color: #4338ca; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
                             <td style="color: #9333ea; font-weight: bold;">${threeMonthsDisplay}</td>
-                            <td class="notes-col">${notesDisplay || '-'}</td>
+                            <td class="notes-col" style="text-align:right;">${notesDisplay || '-'}</td>
                         </tr>
                     `;
                 });
+                
+                // صف المجموع الكلي للتقرير الهرمي
+                html += `
+                        <tr style="background-color: #e0e7ff; font-weight: bold; border-top: 2px solid #a5b4fc;">
+                            <td colspan="2" style="text-align: right; color: #312e81; padding: 8px;">المجموع الكلي</td>
+                            <td style="color: #312e81; padding: 8px;">${sumDailyCompReport.toLocaleString()}</td>
+                            <td style="color: #312e81; padding: 8px;">${sumMonthlyCompReport.toLocaleString()}</td>
+                            <td style="color: #312e81; padding: 8px;">${sum3MonthsCompReport.toLocaleString()}</td>
+                            <td></td>
+                        </tr>
+                `;
+                
                 html += `</tbody></table></div>`;
             } else {
                 html += `<div class="r-empty">لا توجد بيانات للشركات لعرضها.</div></div>`;
@@ -1271,9 +1315,9 @@
 
             // المستوى الرابع: إجمالي المنافذ
             html += `
-                    <div class="r-section" style="flex: 1; min-width: 250px; max-width: 100%; overflow-x: auto; border-color: #fde68a; background-color: #fffbeb;">
+                    <div class="r-section" style="flex: 1; margin-bottom: 0; border-color: #fde68a; background-color: #fffbeb;">
                         <div class="r-sec-title" style="color: #b45309; border-color: #fde68a;">
-                            <span>رابعاً: التجميع وفق منفذ التصدير</span>
+                            <span>رابعاً: التجميع وفق المنفذ</span>
                         </div>
             `;
             
@@ -1282,9 +1326,9 @@
                     <table class="r-table">
                         <thead>
                             <tr>
-                                <th>منفذ التصدير</th>
-                                <th>إجمالي (يومي)</th>
-                                <th>إجمالي (شهري)</th>
+                                <th style="width: 40%;">المنفذ</th>
+                                <th style="width: 30%;">إجمالي (يومي)</th>
+                                <th style="width: 30%;">إجمالي (شهري)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1309,19 +1353,51 @@
         }
 
         function exportToPDF() {
-            const element = document.getElementById('report-content');
+            showToast('جاري تجهيز ملف PDF...', 'success');
+            
+            const originalElement = document.getElementById('report-content');
+            
+            // --- الحل المتقن والنهائي لمشكلة RTL ---
+            // 1. إنشاء حاوية وهمية مستنسخة للتقرير لتجهيزها للطباعة
+            const wrapper = document.createElement('div');
+            
+            // 2. إجبار الحاوية أن تبدأ تماماً من أقصى يمين الصفحة
+            // هذا يمنع html2canvas من فقدان الجزء الأيمن أو الأيسر من الجدول
+            wrapper.style.position = 'absolute';
+            wrapper.style.right = '0';
+            wrapper.style.top = '0';
+            wrapper.style.width = '1120px'; // العرض المثالي لورقة A4 أفقية
+            wrapper.style.background = 'white';
+            wrapper.style.padding = '20px';
+            wrapper.style.zIndex = '-9999'; // إخفاءها عن المستخدم
+            wrapper.setAttribute('dir', 'rtl'); // الإبقاء على اتجاه العربية الأصلي
+            
+            const clone = originalElement.cloneNode(true);
+            wrapper.appendChild(clone);
+            document.body.appendChild(wrapper);
+
             const opt = {
-                margin:       0.4,
+                margin:       0.2,
                 filename:     `تقرير_صادرات_${getActiveDbName().replace(/\s+/g, '_')}.pdf`,
                 image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 1200
+                },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
                 pagebreak:    { mode: ['css', 'legacy'] } 
             };
-            showToast('جاري تجهيز ملف PDF...', 'success');
-            html2pdf().set(opt).from(element).save().then(() => {
-                showToast('تم تحميل ملف PDF بنجاح', 'success');
-            });
+            
+            // الانتظار قليلاً ليتم رسم المستنسخ بشكل صحيح ثم حذفه
+            setTimeout(() => {
+                html2pdf().set(opt).from(wrapper).save().then(() => {
+                    document.body.removeChild(wrapper);
+                    showToast('تم تحميل ملف PDF بنجاح', 'success');
+                });
+            }, 300);
         }
 
         function exportToWord() {
@@ -1418,12 +1494,26 @@
                 ["اسم الشركة", "المحاور النشطة بها", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)", "إجمالي الكمية (3 أشهر)", "ملاحظات"]
             ];
             
+            let sumDailyCompExcel = 0;
+            let sumMonthlyCompExcel = 0;
+            let sum3MonthsCompExcel = 0;
+
             let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
             sortedTotals.forEach(([compName, data]) => {
-                let threeMonthsVal = compName === 'بركات الخير' ? '-' : data.daily * 90;
+                let threeMonthsValNum = compName === 'بركات الخير' ? 0 : data.daily * 90;
+                let threeMonthsVal = compName === 'بركات الخير' ? '-' : threeMonthsValNum;
                 let notesDisplay = Array.from(data.notes).join(' - ');
+                
+                sumDailyCompExcel += data.daily;
+                sumMonthlyCompExcel += data.daily * 30;
+                sum3MonthsCompExcel += threeMonthsValNum;
+
                 compTotalsData.push([compName, Array.from(data.axes).join(' ، '), data.daily, data.daily * 30, threeMonthsVal, notesDisplay]);
             });
+
+            // إضافة صف المجموع الكلي للإكسل
+            compTotalsData.push([]); // سطر فارغ للترتيب البصري
+            compTotalsData.push(["المجموع الكلي", "", sumDailyCompExcel, sumMonthlyCompExcel, sum3MonthsCompExcel, ""]);
 
             const wsCompTotals = XLSX.utils.aoa_to_sheet(compTotalsData);
             if(!wsCompTotals['!views']) wsCompTotals['!views'] = [];
