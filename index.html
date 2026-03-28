@@ -151,7 +151,7 @@
                 <!-- الإجمالي -->
                 <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 relative">
                     <label class="block text-sm font-bold text-primary mb-2">إجمالي الكميات (طن/يوم)</label>
-                    <input type="number" id="plan-total" class="input-field text-lg font-bold text-primary" oninput="calcFromTotal()" placeholder="0">
+                    <input type="number" id="plan-total" step="any" class="input-field text-lg font-bold text-primary" oninput="calcFromTotal()" placeholder="0">
                     <div id="plan-total-monthly" class="text-xs font-bold text-gray-600 mt-2 bg-white px-2 py-1 rounded border border-blue-100">الشهري: 0 طن/شهر</div>
                 </div>
 
@@ -161,7 +161,7 @@
                     <div class="flex gap-2 mb-1">
                         <div class="w-2/3">
                             <span class="text-xs text-gray-500 mb-1 block">الكمية (طن/يوم)</span>
-                            <input type="number" id="plan-n-qty" class="input-field" oninput="calcFromQty()" placeholder="0">
+                            <input type="number" id="plan-n-qty" step="any" class="input-field" oninput="calcFromQty()" placeholder="0">
                         </div>
                         <div class="w-1/3">
                             <span class="text-xs text-gray-500 mb-1 block">النسبة %</span>
@@ -177,7 +177,7 @@
                     <div class="flex gap-2 mb-1">
                         <div class="w-2/3">
                             <span class="text-xs text-gray-500 mb-1 block">الكمية (طن/يوم)</span>
-                            <input type="number" id="plan-c-qty" class="input-field" oninput="calcFromQty()" placeholder="0">
+                            <input type="number" id="plan-c-qty" step="any" class="input-field" oninput="calcFromQty()" placeholder="0">
                         </div>
                         <div class="w-1/3">
                             <span class="text-xs text-gray-500 mb-1 block">النسبة %</span>
@@ -193,7 +193,7 @@
                     <div class="flex gap-2 mb-1">
                         <div class="w-2/3">
                             <span class="text-xs text-gray-500 mb-1 block">الكمية (طن/يوم)</span>
-                            <input type="number" id="plan-s-qty" class="input-field" oninput="calcFromQty()" placeholder="0">
+                            <input type="number" id="plan-s-qty" step="any" class="input-field" oninput="calcFromQty()" placeholder="0">
                         </div>
                         <div class="w-1/3">
                             <span class="text-xs text-gray-500 mb-1 block">النسبة %</span>
@@ -236,7 +236,7 @@
                 
                 <div class="md:col-span-1">
                     <label class="block text-sm font-bold text-gray-700 mb-1">الكمية (طن/يوم) <span class="text-red-500">*</span></label>
-                    <input type="number" id="comp-qty" class="input-field" placeholder="0" min="1" required>
+                    <input type="number" id="comp-qty" step="any" class="input-field" placeholder="0" min="0" required>
                 </div>
 
                 <div class="md:col-span-1">
@@ -320,6 +320,7 @@
                                     <th class="py-2 px-4 text-center border-b">إجمالي (يومي)</th>
                                     <th class="py-2 px-4 text-center border-b">إجمالي (شهري)</th>
                                     <th class="py-2 px-4 text-center border-b">إجمالي (3 أشهر)</th>
+                                    <th class="py-2 px-4 text-right border-b">ملاحظات</th>
                                 </tr>
                             </thead>
                             <tbody id="company-summary-body">
@@ -851,9 +852,10 @@
                 actualTotals.all += c.qty;
 
                 let compKey = c.name.trim();
-                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
+                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set(), notes: new Set() };
                 companyTotals[compKey].daily += c.qty;
                 companyTotals[compKey].axes.add(axisNames[c.axis]);
+                if (c.notes) companyTotals[compKey].notes.add(c.notes.trim());
 
                 let portKey = c.port || 'غير محدد';
                 if(!portTotals[portKey]) portTotals[portKey] = { daily: 0, companies: new Set() };
@@ -921,12 +923,17 @@
                 let data = companyTotals[compName];
                 let row = document.createElement('tr');
                 row.className = "bg-white hover:bg-gray-50";
+                
+                let threeMonthsDisplay = compName === 'بركات الخير' ? '-' : (data.daily * 90).toLocaleString();
+                let notesDisplay = Array.from(data.notes).join(' - ');
+
                 row.innerHTML = `
                     <td class="py-2 px-4 border-b font-bold">${compName}</td>
                     <td class="py-2 px-4 border-b text-gray-600 text-xs">${Array.from(data.axes).join(' ، ')}</td>
                     <td class="py-2 px-4 border-b text-center font-bold text-gray-800">${data.daily.toLocaleString()}</td>
                     <td class="py-2 px-4 border-b text-center font-bold text-indigo-600">${(data.daily * 30).toLocaleString()}</td>
-                    <td class="py-2 px-4 border-b text-center font-bold text-purple-600">${(data.daily * 90).toLocaleString()}</td>
+                    <td class="py-2 px-4 border-b text-center font-bold text-purple-600">${threeMonthsDisplay}</td>
+                    <td class="py-2 px-4 border-b text-gray-600 text-xs max-w-xs truncate" title="${notesDisplay}">${notesDisplay || '-'}</td>
                 `;
                 compSummaryBody.appendChild(row);
             });
@@ -1051,9 +1058,10 @@
                 companiesByAxis[c.axis].push(c);
 
                 let compKey = c.name.trim();
-                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
+                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set(), notes: new Set() };
                 companyTotals[compKey].daily += c.qty;
                 companyTotals[compKey].axes.add(axisNames[c.axis]);
+                if (c.notes) companyTotals[compKey].notes.add(c.notes.trim());
 
                 let portKey = c.port || 'غير محدد';
                 if(!portTotals[portKey]) portTotals[portKey] = { daily: 0, companies: new Set() };
@@ -1082,7 +1090,8 @@
                     .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 11px; white-space: nowrap; }
                     .r-table tr:nth-child(even) { background-color: #f8fafc; }
                     .r-table td.nowrap { white-space: nowrap; }
-                    .r-table td.notes-col { font-size: 11px; color: #4b5563; max-width: 160px; word-wrap: break-word; }
+                    .r-table td.name-col { max-width: 120px; font-weight: bold; text-align: right; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+                    .r-table td.notes-col { font-size: 11px; color: #4b5563; max-width: 160px; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-all; white-space: normal; }
                     
                     .r-empty { color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; padding: 10px; }
                     
@@ -1193,7 +1202,7 @@
                         html += `
                             <tr>
                                 <td>${idx + 1}</td>
-                                <td style="text-align: right; font-weight: bold;" class="nowrap">${c.name}</td>
+                                <td class="name-col">${c.name}</td>
                                 <td class="nowrap">${c.port || '-'}</td>
                                 <td style="color: #0369a1; font-weight: bold;">${c.qty.toLocaleString()}</td>
                                 <td style="color: #4338ca; font-weight: bold;">${(c.qty*30).toLocaleString()}</td>
@@ -1217,8 +1226,8 @@
 
             // المستوى الثالث: إجمالي الشركات
             html += `
-                <div style="display: flex; gap: 20px; page-break-inside: avoid;">
-                    <div class="r-section" style="flex: 1; border-color: #c7d2fe; background-color: #eef2ff;">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; page-break-inside: avoid;">
+                    <div class="r-section" style="flex: 2; min-width: 300px; max-width: 100%; overflow-x: auto; border-color: #c7d2fe; background-color: #eef2ff;">
                         <div class="r-sec-title" style="color: #4338ca; border-color: #c7d2fe;">
                             <span>ثالثاً: ملخص إجمالي الشركات</span>
                         </div>
@@ -1234,19 +1243,24 @@
                                 <th>إجمالي (يومي)</th>
                                 <th>إجمالي (شهري)</th>
                                 <th>إجمالي (3 أشهر)</th>
+                                <th>ملاحظات</th>
                             </tr>
                         </thead>
                         <tbody>
                 `;
                 let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
                 sortedTotals.forEach(([compName, data]) => {
+                    let threeMonthsDisplay = compName === 'بركات الخير' ? '-' : (data.daily * 90).toLocaleString();
+                    let notesDisplay = Array.from(data.notes).join(' - ');
+
                     html += `
                         <tr>
-                            <td style="text-align: right; font-weight: bold;">${compName}</td>
+                            <td class="name-col">${compName}</td>
                             <td>${Array.from(data.axes).join(' ، ')}</td>
                             <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
                             <td style="color: #4338ca; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
-                            <td style="color: #9333ea; font-weight: bold;">${(data.daily * 90).toLocaleString()}</td>
+                            <td style="color: #9333ea; font-weight: bold;">${threeMonthsDisplay}</td>
+                            <td class="notes-col">${notesDisplay || '-'}</td>
                         </tr>
                     `;
                 });
@@ -1257,7 +1271,7 @@
 
             // المستوى الرابع: إجمالي المنافذ
             html += `
-                    <div class="r-section" style="flex: 1; border-color: #fde68a; background-color: #fffbeb;">
+                    <div class="r-section" style="flex: 1; min-width: 250px; max-width: 100%; overflow-x: auto; border-color: #fde68a; background-color: #fffbeb;">
                         <div class="r-sec-title" style="color: #b45309; border-color: #fde68a;">
                             <span>رابعاً: التجميع وفق منفذ التصدير</span>
                         </div>
@@ -1343,9 +1357,10 @@
                 actualTotals.all += c.qty; 
                 
                 let compKey = c.name.trim();
-                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set() };
+                if(!companyTotals[compKey]) companyTotals[compKey] = { daily: 0, axes: new Set(), notes: new Set() };
                 companyTotals[compKey].daily += c.qty;
                 companyTotals[compKey].axes.add(axisNames[c.axis]);
+                if (c.notes) companyTotals[compKey].notes.add(c.notes.trim());
 
                 let portKey = c.port || 'غير محدد';
                 if(!portTotals[portKey]) portTotals[portKey] = { daily: 0, companies: new Set() };
@@ -1400,18 +1415,20 @@
 
             // --- الشيت 3: إجمالي الشركات ---
             const compTotalsData = [
-                ["اسم الشركة", "المحاور النشطة بها", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)", "إجمالي الكمية (3 أشهر)"]
+                ["اسم الشركة", "المحاور النشطة بها", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)", "إجمالي الكمية (3 أشهر)", "ملاحظات"]
             ];
             
             let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
             sortedTotals.forEach(([compName, data]) => {
-                compTotalsData.push([compName, Array.from(data.axes).join(' ، '), data.daily, data.daily * 30, data.daily * 90]);
+                let threeMonthsVal = compName === 'بركات الخير' ? '-' : data.daily * 90;
+                let notesDisplay = Array.from(data.notes).join(' - ');
+                compTotalsData.push([compName, Array.from(data.axes).join(' ، '), data.daily, data.daily * 30, threeMonthsVal, notesDisplay]);
             });
 
             const wsCompTotals = XLSX.utils.aoa_to_sheet(compTotalsData);
             if(!wsCompTotals['!views']) wsCompTotals['!views'] = [];
             wsCompTotals['!views'].push({rightToLeft: true});
-            wsCompTotals['!cols'] = [{wch: 30}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 25}];
+            wsCompTotals['!cols'] = [{wch: 30}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 25}, {wch: 40}];
             XLSX.utils.book_append_sheet(wb, wsCompTotals, "إجماليات الشركات");
 
             // --- الشيت 4: التجميع وفق المنفذ ---
