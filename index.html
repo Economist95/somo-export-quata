@@ -104,8 +104,8 @@
                 <button onclick="manualSave()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2" title="حفظ البيانات يدوياً">
                     <i class="fa-solid fa-floppy-disk"></i> حفظ
                 </button>
-                <button onclick="clearData()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2" title="مسح جميع البيانات">
-                    <i class="fa-solid fa-trash-can"></i> مسح
+                <button onclick="clearCurrentData()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2" title="حذف كل بيانات قاعدة البيانات الحالية">
+                    <i class="fa-solid fa-eraser"></i> حذف الكل
                 </button>
                 <button onclick="exportToCSV()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2" title="تصدير جدول بسيط">
                     <i class="fa-solid fa-file-csv"></i> CSV
@@ -115,6 +115,31 @@
                 </button>
             </div>
         </header>
+
+        <!-- قسم إدارة قواعد البيانات -->
+        <section class="bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-gradient-to-l from-indigo-50 to-white">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="bg-indigo-100 text-indigo-600 p-2 rounded-lg"><i class="fa-solid fa-database"></i></div>
+                <h2 class="font-bold text-gray-800 whitespace-nowrap">قاعدة البيانات:</h2>
+                <select id="db-selector" class="input-field w-full md:w-64 bg-white font-bold text-primary border-indigo-200 shadow-sm" onchange="changeDatabase(this.value)">
+                    <!-- سيتم تعبئتها برمجياً -->
+                </select>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="createNewDatabase()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm shadow-sm">
+                    <i class="fa-solid fa-folder-plus"></i> قاعدة جديدة
+                </button>
+                <button onclick="duplicateDatabase()" class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm shadow-sm">
+                    <i class="fa-solid fa-copy"></i> استنساخ
+                </button>
+                <button onclick="renameDatabase()" class="bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm border border-gray-200 shadow-sm">
+                    <i class="fa-solid fa-pen-to-square"></i> إعادة تسمية
+                </button>
+                <button onclick="deleteDatabase()" class="bg-white hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm border border-red-200 shadow-sm">
+                    <i class="fa-solid fa-trash-can"></i> حذف القاعدة
+                </button>
+            </div>
+        </section>
 
         <!-- قسم الكميات المخططة -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -294,6 +319,7 @@
                                     <th class="py-2 px-4 text-right border-b">المحاور النشطة</th>
                                     <th class="py-2 px-4 text-center border-b">إجمالي (يومي)</th>
                                     <th class="py-2 px-4 text-center border-b">إجمالي (شهري)</th>
+                                    <th class="py-2 px-4 text-center border-b">إجمالي (3 أشهر)</th>
                                 </tr>
                             </thead>
                             <tbody id="company-summary-body">
@@ -353,25 +379,68 @@
     </div>
 
     <script>
-        // --- حالة التطبيق (State) ---
+        // --- حالة التطبيق (State) و إدارة قواعد البيانات ---
+        let appState = {
+            dbs: [],
+            activeId: null
+        };
+        
         let companies = [];
         let editingCompanyId = null; 
         let sortConfig = { key: null, direction: 'asc' }; 
         const axisNames = { 'n': 'الشمالي', 'c': 'الوسط', 's': 'الجنوبي' };
 
-        // --- نظام الحفظ التلقائي (Local Storage) ---
-        function saveData() {
-            const data = {
-                companies: companies,
-                planTotal: document.getElementById('plan-total').value,
-                planNQty: document.getElementById('plan-n-qty').value,
-                planNPct: document.getElementById('plan-n-pct').value,
-                planCQty: document.getElementById('plan-c-qty').value,
-                planCPct: document.getElementById('plan-c-pct').value,
-                planSQty: document.getElementById('plan-s-qty').value,
-                planSPct: document.getElementById('plan-s-pct').value
+        function getEmptyData() {
+            return {
+                companies: [], planTotal: '', planNQty: '', planNPct: '', planCQty: '', planCPct: '', planSQty: '', planSPct: ''
             };
-            localStorage.setItem('exportManagerData', JSON.stringify(data));
+        }
+
+        // --- نظام الحفظ وإدارة قواعد البيانات (Local Storage) ---
+        function initDatabases() {
+            const savedState = localStorage.getItem('somoExportAppDBs');
+            if (savedState) {
+                appState = JSON.parse(savedState);
+            } else {
+                // محاولة استرجاع البيانات القديمة (إن وجدت) لعدم ضياعها
+                const oldDataStr = localStorage.getItem('exportManagerData');
+                if (oldDataStr) {
+                    try {
+                        const oldData = JSON.parse(oldDataStr);
+                        appState.dbs.push({ id: 'db_' + Date.now(), name: 'قاعدة بيانات سابقة (مسترجع)', data: oldData });
+                    } catch(e) {}
+                }
+                
+                // إذا لم توجد أي بيانات، ننشئ قاعدة بيانات افتراضية
+                if(appState.dbs.length === 0) {
+                    appState.dbs.push({ id: 'db_' + Date.now(), name: 'قاعدة بيانات 1', data: getEmptyData() });
+                }
+                appState.activeId = appState.dbs[0].id;
+                saveAllState();
+            }
+            populateDbSelector();
+            loadActiveDbData();
+        }
+
+        function saveAllState() {
+            localStorage.setItem('somoExportAppDBs', JSON.stringify(appState));
+        }
+
+        function saveData() {
+            const db = appState.dbs.find(d => d.id === appState.activeId);
+            if (db) {
+                db.data = {
+                    companies: companies,
+                    planTotal: document.getElementById('plan-total').value,
+                    planNQty: document.getElementById('plan-n-qty').value,
+                    planNPct: document.getElementById('plan-n-pct').value,
+                    planCQty: document.getElementById('plan-c-qty').value,
+                    planCPct: document.getElementById('plan-c-pct').value,
+                    planSQty: document.getElementById('plan-s-qty').value,
+                    planSPct: document.getElementById('plan-s-pct').value
+                };
+                saveAllState();
+            }
         }
 
         function manualSave() {
@@ -379,33 +448,121 @@
             showToast('تم حفظ البيانات يدوياً بنجاح', 'success');
         }
 
-        function loadData() {
-            const savedData = localStorage.getItem('exportManagerData');
-            if (savedData) {
-                try {
-                    const data = JSON.parse(savedData);
-                    companies = data.companies || [];
-                    
-                    document.getElementById('plan-total').value = data.planTotal || '';
-                    document.getElementById('plan-n-qty').value = data.planNQty || '';
-                    document.getElementById('plan-n-pct').value = data.planNPct || '';
-                    document.getElementById('plan-c-qty').value = data.planCQty || '';
-                    document.getElementById('plan-c-pct').value = data.planCPct || '';
-                    document.getElementById('plan-s-qty').value = data.planSQty || '';
-                    document.getElementById('plan-s-pct').value = data.planSPct || '';
-                    
-                    return true;
-                } catch (e) {
-                    console.error("Error parsing saved data", e);
-                    return false;
-                }
-            }
-            return false;
+        function loadActiveDbData() {
+            const db = appState.dbs.find(d => d.id === appState.activeId);
+            if (!db) return;
+            const data = db.data;
+            
+            companies = data.companies || [];
+            document.getElementById('plan-total').value = data.planTotal || '';
+            document.getElementById('plan-n-qty').value = data.planNQty || '';
+            document.getElementById('plan-n-pct').value = data.planNPct || '';
+            document.getElementById('plan-c-qty').value = data.planCQty || '';
+            document.getElementById('plan-c-pct').value = data.planCPct || '';
+            document.getElementById('plan-s-qty').value = data.planSQty || '';
+            document.getElementById('plan-s-pct').value = data.planSPct || '';
+            
+            cancelEdit();
+            calcFromQty();
+            renderTable();
         }
 
-        function clearData() {
-            if (confirm('هل أنت متأكد من مسح جميع البيانات؟ (لا يمكن التراجع عن هذه الخطوة)')) {
-                localStorage.removeItem('exportManagerData');
+        function populateDbSelector() {
+            const selector = document.getElementById('db-selector');
+            selector.innerHTML = '';
+            appState.dbs.forEach(db => {
+                const option = document.createElement('option');
+                option.value = db.id;
+                option.textContent = db.name;
+                if(db.id === appState.activeId) option.selected = true;
+                selector.appendChild(option);
+            });
+        }
+
+        function changeDatabase(id) {
+            saveData(); // حفظ الحالي قبل التبديل
+            appState.activeId = id;
+            saveAllState();
+            loadActiveDbData();
+            showToast('تم التبديل إلى قاعدة البيانات المحددة', 'success');
+        }
+
+        function createNewDatabase() {
+            let defaultName = 'قاعدة بيانات ' + (appState.dbs.length + 1);
+            let dbName = prompt("أدخل اسماً لقاعدة البيانات الجديدة:", defaultName);
+            
+            if (dbName !== null) {
+                if (dbName.trim() === '') dbName = defaultName;
+                saveData(); // حفظ العمل الحالي
+                const newId = 'db_' + Date.now();
+                appState.dbs.push({ id: newId, name: dbName.trim(), data: getEmptyData() });
+                appState.activeId = newId;
+                saveAllState();
+                populateDbSelector();
+                loadActiveDbData();
+                showToast('تم إنشاء قاعدة بيانات جديدة بنجاح', 'success');
+            }
+        }
+
+        function duplicateDatabase() {
+            const currentDb = appState.dbs.find(d => d.id === appState.activeId);
+            if (!currentDb) return;
+            
+            saveData(); // حفظ أحدث التعديلات قبل النسخ
+            
+            let defaultName = currentDb.name + " (نسخة)";
+            let newName = prompt("أدخل اسماً للنسخة الجديدة:", defaultName);
+            
+            if (newName !== null) {
+                if (newName.trim() === '') newName = defaultName;
+                
+                const newId = 'db_' + Date.now();
+                // استنساخ عميق للبيانات حتى لا تتأثر القاعدة القديمة
+                const clonedData = JSON.parse(JSON.stringify(currentDb.data));
+                
+                appState.dbs.push({ id: newId, name: newName.trim(), data: clonedData });
+                appState.activeId = newId;
+                saveAllState();
+                populateDbSelector();
+                loadActiveDbData();
+                showToast('تم استنساخ قاعدة البيانات بنجاح', 'success');
+            }
+        }
+
+        function renameDatabase() {
+            const db = appState.dbs.find(d => d.id === appState.activeId);
+            if(db) {
+                const newName = prompt("أدخل الاسم الجديد لقاعدة البيانات:", db.name);
+                if(newName && newName.trim() !== '') {
+                    db.name = newName.trim();
+                    saveAllState();
+                    populateDbSelector();
+                    showToast('تم تغيير الاسم بنجاح', 'success');
+                }
+            }
+        }
+
+        function deleteDatabase() {
+            const db = appState.dbs.find(d => d.id === appState.activeId);
+            if(!db) return;
+            if(confirm(`هل أنت متأكد من حذف قاعدة البيانات "${db.name}" بشكل نهائي؟ (لا يمكن التراجع)`)) {
+                appState.dbs = appState.dbs.filter(d => d.id !== appState.activeId);
+                
+                if(appState.dbs.length === 0) {
+                    // إذا حذف كل شيء، ننشئ واحدة افتراضية
+                    appState.dbs.push({ id: 'db_' + Date.now(), name: 'قاعدة بيانات 1', data: getEmptyData() });
+                }
+                
+                appState.activeId = appState.dbs[0].id;
+                saveAllState();
+                populateDbSelector();
+                loadActiveDbData();
+                showToast('تم الحذف بنجاح', 'success');
+            }
+        }
+
+        function clearCurrentData() {
+            if (confirm('هل أنت متأكد من حذف كل بيانات "قاعدة البيانات الحالية"؟ (ستبقى القاعدة موجودة ولكنها ستصبح فارغة)')) {
                 companies = [];
                 document.getElementById('plan-total').value = '';
                 document.getElementById('plan-n-qty').value = '';
@@ -417,8 +574,14 @@
                 cancelEdit(); 
                 calcFromQty(); 
                 renderTable();
-                showToast('تم مسح البيانات بنجاح', 'success');
+                saveData();
+                showToast('تم حذف كل بيانات قاعدة البيانات الحالية بنجاح', 'success');
             }
+        }
+
+        function getActiveDbName() {
+            const db = appState.dbs.find(d => d.id === appState.activeId);
+            return db ? db.name : 'غير محدد';
         }
 
         // --- نظام الإشعارات ---
@@ -763,6 +926,7 @@
                     <td class="py-2 px-4 border-b text-gray-600 text-xs">${Array.from(data.axes).join(' ، ')}</td>
                     <td class="py-2 px-4 border-b text-center font-bold text-gray-800">${data.daily.toLocaleString()}</td>
                     <td class="py-2 px-4 border-b text-center font-bold text-indigo-600">${(data.daily * 30).toLocaleString()}</td>
+                    <td class="py-2 px-4 border-b text-center font-bold text-purple-600">${(data.daily * 90).toLocaleString()}</td>
                 `;
                 compSummaryBody.appendChild(row);
             });
@@ -852,7 +1016,8 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", "تقرير_تخصيص_الصادرات_مبسط.csv");
+            let safeDbName = getActiveDbName().replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+            link.setAttribute("download", `تقرير_صادرات_${safeDbName}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -902,7 +1067,6 @@
                     .r-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; }
                     .r-title { color: #1e3a8a; font-size: 26px; font-weight: 800; margin: 0; }
                     .r-date { color: #6b7280; font-size: 14px; margin-top: 5px; }
-                    /* إضافة أوامر تمنع انقسام الأقسام في الـ PDF */
                     .r-section { margin-bottom: 30px; padding: 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
                     .r-sec-title { font-size: 20px; font-weight: bold; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;}
                     .r-total-badge { background-color: #1e3a8a; color: white; padding: 4px 12px; border-radius: 20px; font-size: 16px; font-weight: bold; }
@@ -939,6 +1103,7 @@
                 <div class="r-header">
                     <h3 style="color: #64748b; font-size: 16px; margin-bottom: 5px; font-weight: bold;">شركة تسويق النفط (SOMO) - هيئة تسويق المنتجات النفطية</h3>
                     <h1 class="r-title">تقرير إدارة وتخصيص الصادرات (التقرير الشامل)</h1>
+                    <div style="text-align:center; font-size: 18px; font-weight:bold; color:#b45309; margin-top: 10px;">قاعدة البيانات: ${getActiveDbName()}</div>
                     <div class="r-date">تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</div>
                 </div>
                 
@@ -997,7 +1162,7 @@
                                     <th>منفذ التصدير</th>
                                     <th>الكمية (يومي)</th>
                                     <th>الكمية (شهري)</th>
-                                    <th>العلاوة</th>
+                                    <th>الحسم</th>
                                     <th>وقت وتاريخ الإجابة</th>
                                     <th title="% من الإجمالي الفعلي للمحور">% (فعلي)</th>
                                     <th title="% من المخطط للمحور">% (مخطط)</th>
@@ -1065,8 +1230,10 @@
                         <thead>
                             <tr>
                                 <th>اسم الشركة</th>
+                                <th>المحاور النشطة</th>
                                 <th>إجمالي (يومي)</th>
                                 <th>إجمالي (شهري)</th>
+                                <th>إجمالي (3 أشهر)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1076,8 +1243,10 @@
                     html += `
                         <tr>
                             <td style="text-align: right; font-weight: bold;">${compName}</td>
+                            <td>${Array.from(data.axes).join(' ، ')}</td>
                             <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
                             <td style="color: #4338ca; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
+                            <td style="color: #9333ea; font-weight: bold;">${(data.daily * 90).toLocaleString()}</td>
                         </tr>
                     `;
                 });
@@ -1129,11 +1298,11 @@
             const element = document.getElementById('report-content');
             const opt = {
                 margin:       0.4,
-                filename:     'التقرير_الهرمي_للصادرات.pdf',
+                filename:     `تقرير_صادرات_${getActiveDbName().replace(/\s+/g, '_')}.pdf`,
                 image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
-                pagebreak:    { mode: ['css', 'legacy'] } // تم إضافة خيار التحكم بذكاء في فواصل الصفحات
+                pagebreak:    { mode: ['css', 'legacy'] } 
             };
             showToast('جاري تجهيز ملف PDF...', 'success');
             html2pdf().set(opt).from(element).save().then(() => {
@@ -1143,7 +1312,6 @@
 
         function exportToWord() {
             const content = document.getElementById('report-container').innerHTML;
-            // إضافة أمر لتوجيه برنامج Word لفتح المستند بشكل أفقي (Landscape)
             const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>تقرير التصدير</title><style>@page { size: 29.7cm 21cm; margin: 1cm; } mso-page-orientation: landscape;</style></head><body>";
             const footer = "</body></html>";
             const sourceHTML = header + content + footer;
@@ -1152,7 +1320,8 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'التقرير_الهرمي_للصادرات.doc';
+            let safeDbName = getActiveDbName().replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+            link.download = `تقرير_صادرات_${safeDbName}.doc`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1188,6 +1357,7 @@
             const summaryData = [
                 ["تقرير إدارة الحصص التصديرية - الملخص الإداري"],
                 ["تاريخ الإصدار:", new Date().toLocaleDateString('ar-EG')],
+                ["قاعدة البيانات:", getActiveDbName()],
                 [],
                 ["البيان", "المحور الشمالي", "محور الوسط", "المحور الجنوبي", "الإجمالي الكلي"],
                 ["الكميات المخططة (الهدف) - طن/يوم", axisPlanned.n, axisPlanned.c, axisPlanned.s, planned.total],
@@ -1230,18 +1400,18 @@
 
             // --- الشيت 3: إجمالي الشركات ---
             const compTotalsData = [
-                ["اسم الشركة", "المحاور النشطة بها", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)"]
+                ["اسم الشركة", "المحاور النشطة بها", "إجمالي الكمية (طن/يوم)", "إجمالي الكمية (طن/شهر)", "إجمالي الكمية (3 أشهر)"]
             ];
             
             let sortedTotals = Object.entries(companyTotals).sort((a,b) => b[1].daily - a[1].daily);
             sortedTotals.forEach(([compName, data]) => {
-                compTotalsData.push([compName, Array.from(data.axes).join(' ، '), data.daily, data.daily * 30]);
+                compTotalsData.push([compName, Array.from(data.axes).join(' ، '), data.daily, data.daily * 30, data.daily * 90]);
             });
 
             const wsCompTotals = XLSX.utils.aoa_to_sheet(compTotalsData);
             if(!wsCompTotals['!views']) wsCompTotals['!views'] = [];
             wsCompTotals['!views'].push({rightToLeft: true});
-            wsCompTotals['!cols'] = [{wch: 30}, {wch: 30}, {wch: 25}, {wch: 25}];
+            wsCompTotals['!cols'] = [{wch: 30}, {wch: 30}, {wch: 25}, {wch: 25}, {wch: 25}];
             XLSX.utils.book_append_sheet(wb, wsCompTotals, "إجماليات الشركات");
 
             // --- الشيت 4: التجميع وفق المنفذ ---
@@ -1260,30 +1430,24 @@
             wsPortTotals['!cols'] = [{wch: 25}, {wch: 20}, {wch: 25}, {wch: 25}];
             XLSX.utils.book_append_sheet(wb, wsPortTotals, "التجميع وفق المنفذ");
 
-            XLSX.writeFile(wb, "تقرير_احترافي_للتصدير.xlsx");
+            let safeDbName = getActiveDbName().replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+            XLSX.writeFile(wb, `تقرير_صادرات_${safeDbName}.xlsx`);
             showToast('تم تحميل ملف Excel الاحترافي بنجاح', 'success');
         }
 
         // تهيئة مبدئية
         window.onload = () => {
-            // تهيئة أداة التاريخ والوقت الاحترافية
             flatpickr("#comp-resp", {
                 enableTime: true,
                 dateFormat: "Y-m-dTH:i",
                 altInput: true,
                 altFormat: "Y/m/d h:i K", // صيغة 12 ساعة مع ص/م
                 locale: "ar", // اللغة العربية
-                disableMobile: "true" // يمنع ظهور الواجهة الافتراضية المزعجة في الهاتف
+                disableMobile: "true" 
             });
 
-            if (loadData()) {
-                calcFromQty(); // لضمان تحديث عرض الشهري
-                renderTable();
-                showToast('تم استعادة بياناتك المحفوظة تلقائياً', 'success');
-            } else {
-                document.getElementById('plan-total').value = 10000;
-                calcFromTotal();
-            }
+            initDatabases();
+            showToast(`أهلاً بك، أنت تعمل الآن على قاعدة البيانات: ${getActiveDbName()}`, 'success');
         };
 
     </script>
