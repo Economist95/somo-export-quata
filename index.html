@@ -11,9 +11,11 @@
     <!-- تضمين أيقونات FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- مكتبات التصدير المتقدم (تم التحديث لنسخ حديثة تدعم اللغة العربية بشكل ممتاز) -->
+    <!-- مكتبات التصدير المتقدم -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>window.jsPDF = window.jspdf.jsPDF;</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <!-- مكتبة Flatpickr لتحسين واجهة اختيار التاريخ والوقت -->
@@ -1099,25 +1101,45 @@
                     .r-header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; }
                     .r-title { color: #1e3a8a; font-size: 24px; font-weight: 800; margin: 0; }
                     .r-date { color: #6b7280; font-size: 13px; margin-top: 5px; }
-                    .r-section { margin-bottom: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; }
+                    
+                    /* أوامر تجبر النظام على عدم قطع الأقسام بين صفحتين */
+                    .r-section { margin-bottom: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
+                    .axis-block { margin-bottom: 20px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
+                    
                     .r-sec-title { font-size: 18px; font-weight: bold; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
                     .r-total-badge { background-color: #1e3a8a; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
                     .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
                     .r-axis-card { background: white; border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; padding: 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
                     .r-axis-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 8px; }
                     
-                    /* تنسيق الجدول الطبيعي السليم للغة العربية - بدون أوامر الكسر المعقدة */
-                    .r-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+                    /* تصميم الجدول البسيط والأصيل بدون تعقيدات تخرب الطباعة */
+                    .r-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; table-layout: fixed; }
                     .r-table thead { display: table-header-group; }
-                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 8px 6px; text-align: center; vertical-align: middle; }
-                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 11px; }
+                    .r-table tr { page-break-inside: avoid; break-inside: avoid; }
+                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 8px 4px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 10px; }
                     .r-table tr:nth-child(even) { background-color: #f8fafc; }
                     
-                    .r-table td.name-col { font-weight: bold; text-align: right; color: #1e3a8a; }
-                    .r-table td.notes-col { font-size: 10px; color: #4b5563; text-align: right; line-height: 1.5; }
+                    .r-table td.name-col { font-weight: bold; text-align: right; color: #1e3a8a; white-space: normal; }
+                    .r-table td.notes-col { font-size: 10px; color: #4b5563; text-align: right; line-height: 1.5; white-space: normal; }
                     
                     .r-empty { color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; padding: 10px; }
-                    .axis-block { margin-bottom: 20px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px; page-break-inside: avoid; }
+                    .summary-flex-container { display: flex; gap: 15px; align-items: flex-start; }
+                    
+                    /* إعدادات الطباعة للـ PDF */
+                    @media print { 
+                        @page { size: landscape; margin: 1cm; }
+                        .r-grid { display: flex; justify-content: space-between; gap: 10px; } 
+                        .r-axis-card { flex: 1; } 
+                        .r-table th, .r-table td { padding: 4px; font-size: 9.5px; }
+                        
+                        /* فك ارتباط الـ Flexbox للجداول السفلية ليتم وضعها تحت بعضها في الـ PDF فقط إذا كانت طويلة */
+                        .summary-flex-container { display: block !important; }
+                        .summary-flex-container > div { width: 100% !important; margin-bottom: 20px !important; }
+                        
+                        /* منع انقسام السطر الواحد أو الجدول الصغير بين صفحتين */
+                        .r-section, .axis-block, tr, thead, tbody { page-break-inside: avoid !important; break-inside: avoid !important; }
+                    }
                 </style>
             `;
 
@@ -1179,17 +1201,17 @@
                         <table class="r-table">
                             <thead>
                                 <tr>
-                                    <th>ت</th>
-                                    <th>اسم الشركة</th>
-                                    <th>منفذ التصدير</th>
-                                    <th>الكمية (يومي)</th>
-                                    <th>الكمية (شهري)</th>
-                                    <th>الحسم</th>
-                                    <th>وقت الإجابة</th>
-                                    <th>% (فعلي)</th>
-                                    <th>% (مخطط)</th>
-                                    <th>% (كلي)</th>
-                                    <th>ملاحظات</th>
+                                    <th style="width: 4%;">ت</th>
+                                    <th style="width: 14%;">اسم الشركة</th>
+                                    <th style="width: 9%;">منفذ التصدير</th>
+                                    <th style="width: 9%;">الكمية (يومي)</th>
+                                    <th style="width: 9%;">الكمية (شهري)</th>
+                                    <th style="width: 6%;">الحسم</th>
+                                    <th style="width: 11%;">وقت الإجابة</th>
+                                    <th style="width: 6%;">% (فعلي)</th>
+                                    <th style="width: 6%;">% (مخطط)</th>
+                                    <th style="width: 6%;">% (كلي)</th>
+                                    <th style="width: 20%;">ملاحظات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1239,7 +1261,7 @@
 
             // المستوى الثالث: إجمالي الشركات
             html += `
-                <div style="display: flex; gap: 15px; page-break-inside: avoid; align-items: flex-start;">
+                <div class="summary-flex-container">
                     <div class="r-section" style="flex: 2; margin-bottom: 0; border-color: #c7d2fe; background-color: #eef2ff;">
                         <div class="r-sec-title" style="color: #4338ca; border-color: #c7d2fe;">
                             <span>ثالثاً: ملخص إجمالي الشركات</span>
@@ -1251,12 +1273,12 @@
                     <table class="r-table">
                         <thead>
                             <tr>
-                                <th>اسم الشركة</th>
-                                <th>المحاور النشطة</th>
-                                <th>إجمالي (يومي)</th>
-                                <th>إجمالي (شهري)</th>
-                                <th>إجمالي (3 أشهر)</th>
-                                <th>ملاحظات</th>
+                                <th style="width: 20%;">اسم الشركة</th>
+                                <th style="width: 15%;">المحاور النشطة</th>
+                                <th style="width: 15%;">إجمالي (يومي)</th>
+                                <th style="width: 15%;">إجمالي (شهري)</th>
+                                <th style="width: 15%;">إجمالي (3 أشهر)</th>
+                                <th style="width: 20%;">ملاحظات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1316,9 +1338,9 @@
                     <table class="r-table">
                         <thead>
                             <tr>
-                                <th>المنفذ</th>
-                                <th>إجمالي (يومي)</th>
-                                <th>إجمالي (شهري)</th>
+                                <th style="width: 40%;">المنفذ</th>
+                                <th style="width: 30%;">إجمالي (يومي)</th>
+                                <th style="width: 30%;">إجمالي (شهري)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1342,72 +1364,52 @@
             container.innerHTML = reportStyle + html;
         }
 
-        async function exportToPDF() {
+        function exportToPDF() {
             showToast('جاري تجهيز ملف PDF، يرجى الانتظار...', 'success');
             
             const originalElement = document.getElementById('report-content');
             
-            // 1. الخدعة الهندسية: إنشاء مساحة وهمية مطابقة تماماً لمقاس الـ A4 لضمان عدم الاقتطاع
-            // نقوم بوضعه في أقصى اليمين (right:0) حتى يبدأ المتصفح برسم الجدول من النقطة العربية الصحيحة
+            // --- الحل المتقن والنهائي لطباعة الـ PDF باللغة العربية ---
+            // 1. نقوم بإنشاء حاوية خلفية (غير مرئية للمستخدم) لوضع التقرير فيها
+            const printContainer = document.createElement('div');
+            printContainer.style.position = 'absolute';
+            // 2. نقوم بدفعها بعيداً عن الشاشة من اليسار، لكي تبدأ الحاوية من اليمين (RTL) بشكل طبيعي دون اقتطاع
+            printContainer.style.right = '-9999px'; 
+            printContainer.style.top = '0';
+            
             const wrapper = document.createElement('div');
-            wrapper.style.position = 'absolute';
-            wrapper.style.right = '0'; // هذا هو السر الذي يمنع الاقتطاع من اليسار أو اليمين
-            wrapper.style.top = '0';
-            wrapper.style.width = '1120px'; // عرض الورقة
+            wrapper.style.width = '1120px'; // نثبت عرض الجدول ليكون متطابقاً مع ورقة A4 أفقية (Landscape)
             wrapper.style.background = 'white';
             wrapper.style.padding = '20px';
-            wrapper.style.zIndex = '-9999';
-            wrapper.setAttribute('dir', 'rtl'); // الإبقاء على الاتجاه العربي الطبيعي 100%
+            wrapper.setAttribute('dir', 'rtl'); // نحافظ على اتجاه اللغة الأصلي 100% بدون أي تلاعب
             
-            // نسخ محتوى التقرير للطباعة
             const clone = originalElement.cloneNode(true);
             wrapper.appendChild(clone);
-            document.body.appendChild(wrapper);
+            printContainer.appendChild(wrapper);
+            document.body.appendChild(printContainer);
 
-            try {
-                // 2. استخدام html2canvas الحديث والمكتبة المنفصلة JS-PDF
-                const canvas = await html2canvas(wrapper, {
+            // 3. إعدادات الطباعة بدون تعقيدات رسم الحروف (لتجنب تقطيع الكلمات)
+            const opt = {
+                margin:       [0.3, 0.2, 0.3, 0.2], // هوامش متساوية
+                filename:     `تقرير_صادرات_${getActiveDbName().replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { 
                     scale: 2, 
                     useCORS: true,
-                    windowWidth: 1150 // عرض كافٍ لاستيعاب الإطار الوهمي
+                    windowWidth: 1200
+                },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
+                // 4. تقسيم الصفحات بذكاء (يمنع الجدول أو القسم من الانشطار في المنتصف)
+                pagebreak:    { mode: ['css', 'legacy'], avoid: ['.axis-block', '.r-section', 'tr', 'thead'] } 
+            };
+            
+            // نمنح المتصفح جزءاً من الثانية ليقوم بترتيب النصوص قبل التقاط الصورة
+            setTimeout(() => {
+                html2pdf().set(opt).from(wrapper).save().then(() => {
+                    document.body.removeChild(printContainer); // تنظيف بعد الطباعة
+                    showToast('تم تحميل ملف PDF بنجاح', 'success');
                 });
-
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('l', 'mm', 'a4'); // l = بالعرض
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                
-                const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-                
-                let heightLeft = imgHeight;
-                let position = 0;
-
-                // 3. تقسيم الصفحات بذكاء إذا كان التقرير طويلاً
-                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
-
-                while (heightLeft > 0) {
-                    position -= pdfHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                    heightLeft -= pdfHeight;
-                }
-
-                // الحفظ النهائي
-                let safeDbName = getActiveDbName().replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
-                pdf.save(`تقرير_صادرات_${safeDbName}.pdf`);
-                
-                // تنظيف الواجهة
-                document.body.removeChild(wrapper);
-                showToast('تم تحميل ملف PDF بنجاح', 'success');
-
-            } catch(err) {
-                console.error(err);
-                document.body.removeChild(wrapper);
-                showToast('حدث خطأ أثناء التصدير', 'error');
-            }
+            }, 300);
         }
 
         function exportToWord() {
