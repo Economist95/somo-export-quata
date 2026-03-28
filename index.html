@@ -11,8 +11,9 @@
     <!-- تضمين أيقونات FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- مكتبات التصدير المتقدم (PDF و Excel احترافي) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- مكتبات التصدير المتقدم (تم التحديث لنسخ حديثة تدعم اللغة العربية بشكل ممتاز) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <!-- مكتبة Flatpickr لتحسين واجهة اختيار التاريخ والوقت -->
@@ -360,7 +361,7 @@
     </div>
 
     <!-- نافذة التقرير الهرمي والتصدير -->
-    <div id="report-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex justify-center items-center overflow-y-auto pt-10 pb-10">
+    <div id="report-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex justify-center items-center pt-10 pb-10">
         <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-full lg:w-11/12 max-h-[95vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl shrink-0">
                 <h3 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-sitemap text-indigo-600"></i> التقرير الهرمي الشامل وتصدير البيانات</h3>
@@ -1094,40 +1095,29 @@
 
             const reportStyle = `
                 <style>
-                    .report-body { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; color: #1f2937; line-height: 1.5; }
+                    .report-body { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; color: #1f2937; line-height: 1.6; background-color: #fff; padding: 20px; }
                     .r-header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; }
                     .r-title { color: #1e3a8a; font-size: 24px; font-weight: 800; margin: 0; }
                     .r-date { color: #6b7280; font-size: 13px; margin-top: 5px; }
-                    .r-section { margin-bottom: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
+                    .r-section { margin-bottom: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; }
                     .r-sec-title { font-size: 18px; font-weight: bold; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
                     .r-total-badge { background-color: #1e3a8a; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
                     .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
                     .r-axis-card { background: white; border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; padding: 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
                     .r-axis-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 8px; }
                     
-                    /* الجداول هنا تعتمد على العرض الثابت ولا تسمح بالانقطاع */
-                    .r-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; table-layout: fixed; page-break-inside: auto; }
+                    /* تنسيق الجدول الطبيعي السليم للغة العربية - بدون أوامر الكسر المعقدة */
+                    .r-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
                     .r-table thead { display: table-header-group; }
-                    .r-table tr { page-break-inside: avoid; break-inside: avoid; }
-                    /* السماح للكلمات بالالتفاف للسطر التالي بطريقة صحيحة */
-                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 6px 4px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
-                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 10px; }
+                    .r-table th, .r-table td { border: 1px solid #e2e8f0; padding: 8px 6px; text-align: center; vertical-align: middle; }
+                    .r-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; font-size: 11px; }
                     .r-table tr:nth-child(even) { background-color: #f8fafc; }
                     
-                    /* إعدادات النصوص للملاحظات وأسماء الشركات لتلتف بذكاء دون تشوهات */
-                    .r-table td.name-col { font-weight: bold; text-align: right; }
+                    .r-table td.name-col { font-weight: bold; text-align: right; color: #1e3a8a; }
                     .r-table td.notes-col { font-size: 10px; color: #4b5563; text-align: right; line-height: 1.5; }
                     
                     .r-empty { color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; padding: 10px; }
-                    .axis-block { margin-bottom: 20px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px; page-break-inside: avoid; break-inside: avoid; }
-                    
-                    @media print { 
-                        @page { size: landscape; margin: 1cm; }
-                        .r-grid { display: flex; justify-content: space-between; gap: 10px; } 
-                        .r-axis-card { flex: 1; } 
-                        .r-table th, .r-table td { padding: 4px; font-size: 9.5px; }
-                        .r-section, .axis-block, tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-                    }
+                    .axis-block { margin-bottom: 20px; padding: 15px; background: white; border: 1px solid #dcfce3; border-radius: 8px; page-break-inside: avoid; }
                 </style>
             `;
 
@@ -1189,17 +1179,17 @@
                         <table class="r-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 3%;">ت</th>
-                                    <th style="width: 14%;">اسم الشركة</th>
-                                    <th style="width: 9%;">منفذ التصدير</th>
-                                    <th style="width: 9%;">الكمية (يومي)</th>
-                                    <th style="width: 9%;">الكمية (شهري)</th>
-                                    <th style="width: 6%;">الحسم</th>
-                                    <th style="width: 12%;">وقت الإجابة</th>
-                                    <th style="width: 6%;">% (فعلي)</th>
-                                    <th style="width: 6%;">% (مخطط)</th>
-                                    <th style="width: 6%;">% (كلي)</th>
-                                    <th style="width: 20%;">ملاحظات</th>
+                                    <th>ت</th>
+                                    <th>اسم الشركة</th>
+                                    <th>منفذ التصدير</th>
+                                    <th>الكمية (يومي)</th>
+                                    <th>الكمية (شهري)</th>
+                                    <th>الحسم</th>
+                                    <th>وقت الإجابة</th>
+                                    <th>% (فعلي)</th>
+                                    <th>% (مخطط)</th>
+                                    <th>% (كلي)</th>
+                                    <th>ملاحظات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1261,12 +1251,12 @@
                     <table class="r-table">
                         <thead>
                             <tr>
-                                <th style="width: 25%;">اسم الشركة</th>
-                                <th style="width: 20%;">المحاور النشطة</th>
-                                <th style="width: 15%;">إجمالي (يومي)</th>
-                                <th style="width: 15%;">إجمالي (شهري)</th>
-                                <th style="width: 15%;">إجمالي (3 أشهر)</th>
-                                <th style="width: 10%;">ملاحظات</th>
+                                <th>اسم الشركة</th>
+                                <th>المحاور النشطة</th>
+                                <th>إجمالي (يومي)</th>
+                                <th>إجمالي (شهري)</th>
+                                <th>إجمالي (3 أشهر)</th>
+                                <th>ملاحظات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1287,12 +1277,12 @@
 
                     html += `
                         <tr>
-                            <td class="name-col" style="text-align:right;">${compName}</td>
+                            <td class="name-col">${compName}</td>
                             <td>${Array.from(data.axes).join(' ، ')}</td>
                             <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
                             <td style="color: #4338ca; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
                             <td style="color: #9333ea; font-weight: bold;">${threeMonthsDisplay}</td>
-                            <td class="notes-col" style="text-align:right;">${notesDisplay || '-'}</td>
+                            <td class="notes-col">${notesDisplay || '-'}</td>
                         </tr>
                     `;
                 });
@@ -1326,9 +1316,9 @@
                     <table class="r-table">
                         <thead>
                             <tr>
-                                <th style="width: 40%;">المنفذ</th>
-                                <th style="width: 30%;">إجمالي (يومي)</th>
-                                <th style="width: 30%;">إجمالي (شهري)</th>
+                                <th>المنفذ</th>
+                                <th>إجمالي (يومي)</th>
+                                <th>إجمالي (شهري)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1337,7 +1327,7 @@
                 sortedPorts.forEach(([portName, data]) => {
                     html += `
                         <tr>
-                            <td style="text-align: right; font-weight: bold;">${portName}</td>
+                            <td style="text-align: right; font-weight: bold; color: #b45309;">${portName}</td>
                             <td style="font-weight: bold;">${data.daily.toLocaleString()}</td>
                             <td style="color: #b45309; font-weight: bold;">${(data.daily * 30).toLocaleString()}</td>
                         </tr>
@@ -1352,52 +1342,72 @@
             container.innerHTML = reportStyle + html;
         }
 
-        function exportToPDF() {
-            showToast('جاري تجهيز ملف PDF...', 'success');
+        async function exportToPDF() {
+            showToast('جاري تجهيز ملف PDF، يرجى الانتظار...', 'success');
             
             const originalElement = document.getElementById('report-content');
             
-            // --- الحل المتقن والنهائي لمشكلة RTL ---
-            // 1. إنشاء حاوية وهمية مستنسخة للتقرير لتجهيزها للطباعة
+            // 1. الخدعة الهندسية: إنشاء مساحة وهمية مطابقة تماماً لمقاس الـ A4 لضمان عدم الاقتطاع
+            // نقوم بوضعه في أقصى اليمين (right:0) حتى يبدأ المتصفح برسم الجدول من النقطة العربية الصحيحة
             const wrapper = document.createElement('div');
-            
-            // 2. إجبار الحاوية أن تبدأ تماماً من أقصى يمين الصفحة
-            // هذا يمنع html2canvas من فقدان الجزء الأيمن أو الأيسر من الجدول
             wrapper.style.position = 'absolute';
-            wrapper.style.right = '0';
+            wrapper.style.right = '0'; // هذا هو السر الذي يمنع الاقتطاع من اليسار أو اليمين
             wrapper.style.top = '0';
-            wrapper.style.width = '1120px'; // العرض المثالي لورقة A4 أفقية
+            wrapper.style.width = '1120px'; // عرض الورقة
             wrapper.style.background = 'white';
             wrapper.style.padding = '20px';
-            wrapper.style.zIndex = '-9999'; // إخفاءها عن المستخدم
-            wrapper.setAttribute('dir', 'rtl'); // الإبقاء على اتجاه العربية الأصلي
+            wrapper.style.zIndex = '-9999';
+            wrapper.setAttribute('dir', 'rtl'); // الإبقاء على الاتجاه العربي الطبيعي 100%
             
+            // نسخ محتوى التقرير للطباعة
             const clone = originalElement.cloneNode(true);
             wrapper.appendChild(clone);
             document.body.appendChild(wrapper);
 
-            const opt = {
-                margin:       0.2,
-                filename:     `تقرير_صادرات_${getActiveDbName().replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { 
+            try {
+                // 2. استخدام html2canvas الحديث والمكتبة المنفصلة JS-PDF
+                const canvas = await html2canvas(wrapper, {
                     scale: 2, 
                     useCORS: true,
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: 1200
-                },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
-                pagebreak:    { mode: ['css', 'legacy'] } 
-            };
-            
-            // الانتظار قليلاً ليتم رسم المستنسخ بشكل صحيح ثم حذفه
-            setTimeout(() => {
-                html2pdf().set(opt).from(wrapper).save().then(() => {
-                    document.body.removeChild(wrapper);
-                    showToast('تم تحميل ملف PDF بنجاح', 'success');
+                    windowWidth: 1150 // عرض كافٍ لاستيعاب الإطار الوهمي
                 });
-            }, 300);
+
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('l', 'mm', 'a4'); // l = بالعرض
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // 3. تقسيم الصفحات بذكاء إذا كان التقرير طويلاً
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position -= pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                // الحفظ النهائي
+                let safeDbName = getActiveDbName().replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+                pdf.save(`تقرير_صادرات_${safeDbName}.pdf`);
+                
+                // تنظيف الواجهة
+                document.body.removeChild(wrapper);
+                showToast('تم تحميل ملف PDF بنجاح', 'success');
+
+            } catch(err) {
+                console.error(err);
+                document.body.removeChild(wrapper);
+                showToast('حدث خطأ أثناء التصدير', 'error');
+            }
         }
 
         function exportToWord() {
